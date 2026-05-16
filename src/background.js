@@ -1,5 +1,111 @@
 let actions = [];
 let newtaburl = "";
+let launchMode = "default";
+const RECENT_ITEMS_KEY = "omniRecentItems";
+const RECENT_ITEMS_LIMIT = 25;
+
+const canOpenOmniInTab = (tab) => {
+	return tab && tab.url && !tab.url.includes("chrome://") && !tab.url.includes("chrome.google.com");
+}
+
+const canTrackTab = (tab) => {
+	return tab && tab.id && tab.url && !tab.url.includes("chrome://") && !tab.url.includes("chrome-extension://") && !tab.url.includes("chrome.google.com");
+}
+
+const getRecentItems = async () => {
+	const data = await chrome.storage.local.get(RECENT_ITEMS_KEY);
+	return data[RECENT_ITEMS_KEY] || [];
+}
+
+const saveRecentItems = async (items) => {
+	await chrome.storage.local.set({[RECENT_ITEMS_KEY]: items.slice(0, RECENT_ITEMS_LIMIT)});
+}
+
+const pushRecentItem = async (item) => {
+	if (!item || !item.key) {
+		return;
+	}
+	const recentItems = await getRecentItems();
+	const filteredItems = recentItems.filter((recentItem) => recentItem.key !== item.key);
+	filteredItems.unshift({...item, timestamp: Date.now()});
+	await saveRecentItems(filteredItems);
+}
+
+const trackRecentTab = async (tab) => {
+	if (!canTrackTab(tab)) {
+		return;
+	}
+	await pushRecentItem({
+		key: "tab:" + tab.id,
+		kind: "tab",
+		tabId: tab.id,
+		url: tab.url,
+		title: tab.title || tab.url
+	});
+}
+
+const trackRecentAction = async (action) => {
+	if (!action || action.type !== "action" || !action.action || action.action === "search" || action.action === "goto") {
+		return;
+	}
+	await pushRecentItem({
+		key: "action:" + action.action + ":" + (action.url || ""),
+		kind: "action",
+		action: action
+	});
+}
+
+const getRecentActions = async () => {
+	const [recentItems, tabs, currentTab] = await Promise.all([getRecentItems(), chrome.tabs.query({}), getCurrentTab()]);
+	const tabsById = new Map();
+	tabs.forEach((tab) => {
+		tabsById.set(tab.id, tab);
+	});
+	return recentItems.map((item) => {
+		if (item.kind === "tab" && currentTab && item.tabId === currentTab.id) {
+			return null;
+		}
+		if (item.kind === "tab") {
+			const tab = tabsById.get(item.tabId);
+			if (canTrackTab(tab)) {
+				return {
+					title: tab.title || tab.url,
+					desc: tab.url,
+					type: "tab",
+					action: "switch-tab",
+					id: tab.id,
+					index: tab.index,
+					windowId: tab.windowId,
+					url: tab.url,
+					favIconUrl: tab.favIconUrl,
+					emoji: !tab.favIconUrl,
+					emojiChar: "🗂",
+					keycheck: false
+				};
+			}
+			if (item.url) {
+				return {
+					title: item.title || item.url,
+					desc: "Recently viewed tab",
+					type: "action",
+					action: "url",
+					url: item.url,
+					emoji: true,
+					emojiChar: "🗂",
+					keycheck: false
+				};
+			}
+			return null;
+		}
+		if (item.kind === "action" && item.action) {
+			return {
+				...item.action,
+				keycheck: false
+			};
+		}
+		return null;
+	}).filter(Boolean);
+}
 
 // Clear actions and append default ones
 const clearActions = () => {
@@ -177,20 +283,23 @@ chrome.action.onClicked.addListener((tab) => {
 
 // Listen for the open omni shortcut
 chrome.commands.onCommand.addListener((command) => {
-	if (command === "open-omni") {
-		getCurrentTab().then((response) => {
-			if (!response.url.includes("chrome://") && !response.url.includes("chrome.google.com")) {
-				chrome.tabs.sendMessage(response.id, {request: "open-omni"});
-			} else {
-				chrome.tabs.create({
-					url: "./newtab.html"	
-				}).then(() => {
-					newtaburl = response.url;
-					chrome.tabs.remove(response.id);
-				})
-			}
-		});
+	if (command !== "open-omni" && command !== "open-recents") {
+		return;
 	}
+	const request = command === "open-recents" ? "open-recents" : "open-omni";
+	launchMode = command === "open-recents" ? "recent" : "default";
+	getCurrentTab().then((response) => {
+		if (canOpenOmniInTab(response)) {
+			chrome.tabs.sendMessage(response.id, {request: request});
+		} else {
+			chrome.tabs.create({
+				url: "./newtab.html"
+			}).then(() => {
+				newtaburl = response.url;
+				chrome.tabs.remove(response.id);
+			})
+		}
+	});
 });
 
 // Get the current tab
@@ -226,6 +335,15 @@ const resetOmni = () => {
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => resetOmni());
 chrome.tabs.onCreated.addListener((tab) => resetOmni());
 chrome.tabs.onRemoved.addListener((tabId, changeInfo) => resetOmni());
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+	const tab = await chrome.tabs.get(activeInfo.tabId);
+	await trackRecentTab(tab);
+});
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+	if (changeInfo.status === "complete" && tab.active) {
+		await trackRecentTab(tab);
+	}
+});
 
 // Get tabs to populate in the actions
 const getTabs = () => {
@@ -362,6 +480,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		case "get-actions":
 			resetOmni();
 			sendResponse({actions: actions});
+			break;
+		case "get-recents":
+			getRecentActions().then((recentActions) => {
+				sendResponse({actions: recentActions});
+			});
+			return true;
+		case "get-launch-mode":
+			sendResponse({mode: launchMode});
+			launchMode = "default";
+			break;
+		case "record-recent-action":
+			trackRecentAction(message.action);
 			break;
 		case "switch-tab":
 			switchTab(message.tab);

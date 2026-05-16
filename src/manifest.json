@@ -1,5 +1,5 @@
 {
-	"name": "Omni - Bookmark, History, & Tab Manager",
+	"name": "omni-tharshi",
 	"description": "Supercharge Chrome with commands, shortcuts, and more",
 	"offline_enabled": true,
 	"version": "1.4.7",
@@ -23,6 +23,13 @@
 				"mac": "Command+Shift+K"
 			},
 			"description": "Open command menu"
+		},
+		"open-recents": {
+			"suggested_key": {
+				"default": "Ctrl+E",
+				"mac": "Command+E"
+			},
+			"description": "Open recent tabs and actions"
 		}
 	},
 	"background": {
@@ -45,7 +52,7 @@
 		}
 	],
 	"permissions": [
-		"tabs", "activeTab", "bookmarks", "browsingData", "history", "scripting", "search"
+		"tabs", "activeTab", "bookmarks", "browsingData", "history", "scripting", "search", "storage"
 	],
 	"host_permissions": [
 		"https://www.googleapis.com/*", "https://gstatic.com/*", "*://*/*"

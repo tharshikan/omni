@@ -9,10 +9,17 @@ document.onkeyup = (e) => {
 $(document).ready(() => {
 	var actions = [];
 	var isFiltered = false;
+	var currentMode = "default";
+
+	function updateInputPlaceholder() {
+		var placeholder = currentMode == "recent" ? "Search recent tabs and actions" : "Type a command or search";
+		$("#omni-extension input").attr("placeholder", placeholder);
+	}
 
 	// Append the omni into the current page
 	$.get(chrome.runtime.getURL('/content.html'), (data) => {
 		$(data).appendTo('body');
+		updateInputPlaceholder();
 
 		// Get checkmark image for toast
 		$("#omni-extension-toast img").attr("src", chrome.runtime.getURL("assets/check.svg"));
@@ -24,11 +31,9 @@ $(document).ready(() => {
 
 		// New tab page workaround
 		if (window.location.href == "chrome-extension://mpanekjjajcabgnlbabmopeenljeoggm/newtab.html") {
-			isOpen = true;
-			$("#omni-extension").removeClass("omni-closing");
-			window.setTimeout(() => {
-				$("#omni-extension input").focus();
-			}, 100);
+			chrome.runtime.sendMessage({request:"get-launch-mode"}, (response) => {
+				openOmni(response && response.mode ? response.mode : "default");
+			});
 		}
 	});
 
@@ -113,10 +118,14 @@ $(document).ready(() => {
 	}
 
 	// Open the omni
-	function openOmni() {
-		chrome.runtime.sendMessage({request:"get-actions"}, (response) => {
+	function openOmni(mode) {
+		currentMode = mode || "default";
+		updateInputPlaceholder();
+		const request = currentMode == "recent" ? "get-recents" : "get-actions";
+		chrome.runtime.sendMessage({request:request}, (response) => {
 			isOpen = true;
 			actions = response.actions;
+			isFiltered = false;
 			$("#omni-extension input").val("");
 			populateOmni();
 			$("html, body").stop();
@@ -201,6 +210,15 @@ $(document).ready(() => {
 			return;
 		}
 		var value = $(this).val().toLowerCase();
+		if (currentMode == "recent") {
+			$(".omni-extension #omni-list .omni-item").filter(function(){
+				$(this).toggle($(this).find(".omni-item-name").text().toLowerCase().indexOf(value) > -1 || $(this).find(".omni-item-desc").text().toLowerCase().indexOf(value) > -1);
+			});
+			$(".omni-extension #omni-results").html($("#omni-extension #omni-list .omni-item:visible").length+" results");
+			$(".omni-item-active").removeClass("omni-item-active");
+			$(".omni-extension #omni-list .omni-item:visible").first().addClass("omni-item-active");
+			return;
+		}
 		checkShortHand(e, value);
 		value = $(this).val().toLowerCase();
 		if (value.startsWith("/history")) {
@@ -288,6 +306,9 @@ $(document).ready(() => {
 	// Handle actions from the omni
 	function handleAction(e) {
 		var action = actions[$(".omni-item-active").attr("data-index")];
+		if (action && action.type == "action") {
+			chrome.runtime.sendMessage({request:"record-recent-action", action:action});
+		}
 		closeOmni();
 		if ($(".omni-extension input").val().toLowerCase().startsWith("/remove")) {
 			chrome.runtime.sendMessage({request:"remove", type:action.type, action:action});
@@ -367,8 +388,10 @@ $(document).ready(() => {
 
 		// Fetch actions again
 		chrome.runtime.sendMessage({request:"get-actions"}, (response) => {
-			actions = response.actions;
-			populateOmni();
+			if (currentMode == "default") {
+				actions = response.actions;
+				populateOmni();
+			}
 		});
 	}
 
@@ -440,7 +463,13 @@ $(document).ready(() => {
 			if (isOpen) {
 				closeOmni();
 			} else {
-				openOmni();
+				openOmni("default");
+			}
+		} else if (message.request == "open-recents") {
+			if (isOpen && currentMode == "recent") {
+				closeOmni();
+			} else {
+				openOmni("recent");
 			}
 		} else if (message.request == "close-omni") {
 			closeOmni();
