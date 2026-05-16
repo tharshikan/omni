@@ -10,16 +10,93 @@ $(document).ready(() => {
 	var actions = [];
 	var isFiltered = false;
 	var currentMode = "default";
+	var recentActions = [];
+	var recentQuery = "";
+
+	function updateRecentFilterVisibility() {
+		var hasQuery = $("#omni-extension input").val().length > 0;
+		$("#omni-extension").toggleClass("omni-recent-mode", currentMode == "recent");
+		$("#omni-extension").toggleClass("omni-recent-filtering", currentMode == "recent" && hasQuery);
+		$("#omni-recent-query-text").text(recentQuery);
+	}
 
 	function updateInputPlaceholder() {
 		var placeholder = currentMode == "recent" ? "Search recent tabs and actions" : "Type a command or search";
 		$("#omni-extension input").attr("placeholder", placeholder);
 	}
 
+	function setDefaultActiveItem() {
+		$(".omni-item-active").removeClass("omni-item-active");
+		var visibleItems = $(".omni-extension #omni-list .omni-item:visible");
+		if (!visibleItems.length) {
+			return;
+		}
+		if (currentMode == "recent") {
+			var nonCurrentItem = visibleItems.filter(function() {
+				return $(this).attr("data-current-tab") != "true";
+			}).first();
+			if (nonCurrentItem.length) {
+				nonCurrentItem.addClass("omni-item-active");
+				return;
+			}
+		}
+		visibleItems.first().addClass("omni-item-active");
+	}
+
+	function scoreRecentAction(action, query) {
+		var title = (action.title || "").toLowerCase();
+		var desc = (action.desc || "").toLowerCase();
+		var normalizedTitle = title.replace(/^["'`]+|["'`]+$/g, "");
+		var score = 0;
+		if (title.startsWith(query)) {
+			score += 6;
+		} else if (new RegExp("(^|[\\s\\-_\\/])" + query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).test(title)) {
+			score += 5;
+		} else if (title.indexOf(query) > -1) {
+			score += 3;
+		}
+		if (desc.indexOf(query) > -1) {
+			score += 1;
+		}
+		if (normalizedTitle === query) {
+			score -= 4;
+		}
+		if (normalizedTitle.length <= query.length + 2) {
+			score -= 1;
+		}
+		return score;
+	}
+
+	function escapeHtml(value) {
+		return (value || "")
+			.replace(/&/g, "&amp;")
+			.replace(/</g, "&lt;")
+			.replace(/>/g, "&gt;")
+			.replace(/"/g, "&quot;")
+			.replace(/'/g, "&#39;");
+	}
+
+	function highlightRecentMatch(value, query) {
+		var safeValue = escapeHtml(value || "");
+		if (currentMode != "recent" || !query) {
+			return safeValue;
+		}
+		var lowerValue = (value || "").toLowerCase();
+		var index = lowerValue.indexOf(query.toLowerCase());
+		if (index === -1) {
+			return safeValue;
+		}
+		var start = escapeHtml((value || "").slice(0, index));
+		var match = escapeHtml((value || "").slice(index, index + query.length));
+		var end = escapeHtml((value || "").slice(index + query.length));
+		return start + "<span class='omni-match'>" + match + "</span>" + end;
+	}
+
 	// Append the omni into the current page
 	$.get(chrome.runtime.getURL('/content.html'), (data) => {
 		$(data).appendTo('body');
 		updateInputPlaceholder();
+		updateRecentFilterVisibility();
 
 		// Get checkmark image for toast
 		$("#omni-extension-toast img").attr("src", chrome.runtime.getURL("assets/check.svg"));
@@ -42,11 +119,9 @@ $(document).ready(() => {
 		if (action.action == "search" || action.action == "goto") {
 			skip = "style='display:none'";
 		}
-		if (index != 0) {
-			$("#omni-extension #omni-list").append("<div class='omni-item' "+skip+" data-index='"+index+"' data-type='"+action.type+"'>"+img+"<div class='omni-item-details'><div class='omni-item-name'>"+action.title+"</div><div class='omni-item-desc'>"+action.desc+"</div></div>"+keys+"<div class='omni-select'>Select <span class='omni-shortcut'>⏎</span></div></div>");
-		} else {
-			$("#omni-extension #omni-list").append("<div class='omni-item omni-item-active' "+skip+" data-index='"+index+"' data-type='"+action.type+"'>"+img+"<div class='omni-item-details'><div class='omni-item-name'>"+action.title+"</div><div class='omni-item-desc'>"+action.desc+"</div></div>"+keys+"<div class='omni-select'>Select <span class='omni-shortcut'>⏎</span></div></div>");
-		}
+		var actionTitle = currentMode == "recent" ? highlightRecentMatch(action.title, recentQuery) : escapeHtml(action.title);
+		var actionDesc = escapeHtml(action.desc);
+		$("#omni-extension #omni-list").append("<div class='omni-item' "+skip+" data-index='"+index+"' data-type='"+action.type+"' data-current-tab='"+(action.currentTab ? "true" : "false")+"'>"+img+"<div class='omni-item-details'><div class='omni-item-name'>"+actionTitle+"</div><div class='omni-item-desc'>"+actionDesc+"</div></div>"+keys+"<div class='omni-select'>Select <span class='omni-shortcut'>⏎</span></div></div>");
 		if (!action.emoji) {
 			var loadimg = new Image();
 			loadimg.src = action.favIconUrl;
@@ -82,6 +157,7 @@ $(document).ready(() => {
 			}
 		})
 		$(".omni-extension #omni-results").html(actions.length+" results");
+		setDefaultActiveItem();
 	}
 
 	// Add filtered actions to the omni
@@ -102,18 +178,17 @@ $(document).ready(() => {
 			if (action.emoji) {
 				img = "<span class='omni-emoji-action'>"+action.emojiChar+"</span>"
 			}
-			if (index != 0) {
-				return $("<div class='omni-item' data-index='"+index+"' data-type='"+action.type+"' data-url='"+action.url+"'>"+img+"<div class='omni-item-details'><div class='omni-item-name'>"+action.title+"</div><div class='omni-item-desc'>"+action.url+"</div></div>"+keys+"<div class='omni-select'>Select <span class='omni-shortcut'>⏎</span></div></div>")[0]
-			} else {
-				return $("<div class='omni-item omni-item-active' data-index='"+index+"' data-type='"+action.type+"' data-url='"+action.url+"'>"+img+"<div class='omni-item-details'><div class='omni-item-name'>"+action.title+"</div><div class='omni-item-desc'>"+action.url+"</div></div>"+keys+"<div class='omni-select'>Select <span class='omni-shortcut'>⏎</span></div></div>")[0]
-			}
+			return $("<div class='omni-item' data-index='"+index+"' data-type='"+action.type+"' data-url='"+action.url+"' data-current-tab='"+(action.currentTab ? "true" : "false")+"'>"+img+"<div class='omni-item-details'><div class='omni-item-name'>"+action.title+"</div><div class='omni-item-desc'>"+action.url+"</div></div>"+keys+"<div class='omni-select'>Select <span class='omni-shortcut'>⏎</span></div></div>")[0]
 		}
 		actions.length && new VirtualizedList.default($("#omni-extension #omni-list")[0], {
 			height: 400,
 			rowHeight: 60,
 			rowCount: actions.length,
 			renderRow,
-			onMount: () => $(".omni-extension #omni-results").html(actions.length+" results"),
+			onMount: () => {
+				$(".omni-extension #omni-results").html(actions.length+" results");
+				setDefaultActiveItem();
+			},
 		});
 	}
 
@@ -125,8 +200,11 @@ $(document).ready(() => {
 		chrome.runtime.sendMessage({request:request}, (response) => {
 			isOpen = true;
 			actions = response.actions;
+			recentActions = currentMode == "recent" ? response.actions.slice() : [];
+			recentQuery = "";
 			isFiltered = false;
 			$("#omni-extension input").val("");
+			updateRecentFilterVisibility();
 			populateOmni();
 			$("html, body").stop();
 			$("#omni-extension").removeClass("omni-closing");
@@ -144,6 +222,11 @@ $(document).ready(() => {
 			chrome.runtime.sendMessage({request:"restore-new-tab"});
 		} else {
 			isOpen = false;
+			currentMode = "default";
+			recentActions = [];
+			recentQuery = "";
+			$("#omni-extension input").val("");
+			updateRecentFilterVisibility();
 			$("#omni-extension").addClass("omni-closing");
 		}
 	}
@@ -211,12 +294,31 @@ $(document).ready(() => {
 		}
 		var value = $(this).val().toLowerCase();
 		if (currentMode == "recent") {
-			$(".omni-extension #omni-list .omni-item").filter(function(){
-				$(this).toggle($(this).find(".omni-item-name").text().toLowerCase().indexOf(value) > -1 || $(this).find(".omni-item-desc").text().toLowerCase().indexOf(value) > -1);
-			});
-			$(".omni-extension #omni-results").html($("#omni-extension #omni-list .omni-item:visible").length+" results");
-			$(".omni-item-active").removeClass("omni-item-active");
-			$(".omni-extension #omni-list .omni-item:visible").first().addClass("omni-item-active");
+			updateRecentFilterVisibility();
+			recentQuery = value.trim();
+			if (value.trim() == "") {
+				actions = recentActions.slice();
+				populateOmni();
+				return;
+			}
+			actions = recentActions.map((action, index) => {
+				return {
+					action: action,
+					score: scoreRecentAction(action, value),
+					index: index
+				};
+			}).filter((item) => item.score > 0)
+				.sort((a, b) => {
+					if (b.score !== a.score) {
+						return b.score - a.score;
+					}
+					if (a.action.currentTab !== b.action.currentTab) {
+						return a.action.currentTab ? -1 : 1;
+					}
+					return a.index - b.index;
+				})
+				.map((item) => item.action);
+			populateOmni();
 			return;
 		}
 		checkShortHand(e, value);
@@ -299,9 +401,8 @@ $(document).ready(() => {
 		}
 		
 		$(".omni-extension #omni-results").html($("#omni-extension #omni-list .omni-item:visible").length+" results");
-		$(".omni-item-active").removeClass("omni-item-active");
-		$(".omni-extension #omni-list .omni-item:visible").first().addClass("omni-item-active");
-	}
+			setDefaultActiveItem();
+		}
 
 	// Handle actions from the omni
 	function handleAction(e) {

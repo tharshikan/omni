@@ -57,54 +57,54 @@ const trackRecentAction = async (action) => {
 
 const getRecentActions = async () => {
 	const [recentItems, tabs, currentTab] = await Promise.all([getRecentItems(), chrome.tabs.query({}), getCurrentTab()]);
-	const tabsById = new Map();
-	tabs.forEach((tab) => {
-		tabsById.set(tab.id, tab);
-	});
-	return recentItems.map((item) => {
-		if (item.kind === "tab" && currentTab && item.tabId === currentTab.id) {
-			return null;
-		}
+	const trackedTimestamps = new Map();
+	recentItems.forEach((item) => {
 		if (item.kind === "tab") {
-			const tab = tabsById.get(item.tabId);
-			if (canTrackTab(tab)) {
-				return {
-					title: tab.title || tab.url,
-					desc: tab.url,
-					type: "tab",
-					action: "switch-tab",
-					id: tab.id,
-					index: tab.index,
-					windowId: tab.windowId,
-					url: tab.url,
-					favIconUrl: tab.favIconUrl,
-					emoji: !tab.favIconUrl,
-					emojiChar: "🗂",
-					keycheck: false
-				};
-			}
-			if (item.url) {
-				return {
-					title: item.title || item.url,
-					desc: "Recently viewed tab",
-					type: "action",
-					action: "url",
-					url: item.url,
-					emoji: true,
-					emojiChar: "🗂",
-					keycheck: false
-				};
-			}
-			return null;
+			trackedTimestamps.set(item.tabId, item.timestamp || 0);
 		}
-		if (item.kind === "action" && item.action) {
+	});
+	const recentTabs = tabs
+		.filter((tab) => canTrackTab(tab) && (!currentTab || tab.id !== currentTab.id))
+		.sort((a, b) => {
+			const aRecent = trackedTimestamps.get(a.id) || a.lastAccessed || 0;
+			const bRecent = trackedTimestamps.get(b.id) || b.lastAccessed || 0;
+			return bRecent - aRecent;
+		})
+		.map((tab) => {
 			return {
-				...item.action,
-				keycheck: false
+				title: tab.title || tab.url,
+				desc: tab.url,
+				type: "tab",
+				action: "switch-tab",
+				id: tab.id,
+				index: tab.index,
+				windowId: tab.windowId,
+				url: tab.url,
+				favIconUrl: tab.favIconUrl,
+				emoji: !tab.favIconUrl,
+				emojiChar: "🗂",
+				keycheck: false,
+				currentTab: false
 			};
-		}
-		return null;
-	}).filter(Boolean);
+		});
+	if (canTrackTab(currentTab)) {
+		recentTabs.unshift({
+			title: currentTab.title || currentTab.url,
+			desc: "Current tab • " + currentTab.url,
+			type: "tab",
+			action: "switch-tab",
+			id: currentTab.id,
+			index: currentTab.index,
+			windowId: currentTab.windowId,
+			url: currentTab.url,
+			favIconUrl: currentTab.favIconUrl,
+			emoji: !currentTab.favIconUrl,
+			emojiChar: "🗂",
+			keycheck: false,
+			currentTab: true
+		});
+	}
+	return recentTabs;
 }
 
 // Clear actions and append default ones
