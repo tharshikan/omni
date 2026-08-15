@@ -160,6 +160,78 @@ const getExplorerTabs = async () => {
 		});
 }
 
+// Live omnibox-style suggestions: Google suggest (same source Chrome uses)
+// plus history URL matches, returned as ready-to-render action rows
+const fetchGoogleSuggestions = async (query) => {
+	const res = await fetch(
+		"https://suggestqueries.google.com/complete/search?client=chrome&q=" + encodeURIComponent(query),
+		{ signal: AbortSignal.timeout(900) }
+	);
+	const data = await res.json();
+	const texts = data[1] || [];
+	const meta = data[4] || {};
+	const types = meta["google:suggesttype"] || [];
+	const details = meta["google:suggestdetail"] || [];
+	return texts.slice(0, 5).map((text, i) => ({ text: text, type: types[i] || "QUERY", detail: details[i] }));
+}
+
+const getSuggestions = async (query) => {
+	const [suggestions, historyItems] = await Promise.all([
+		fetchGoogleSuggestions(query).catch(() => []),
+		chrome.history.search({ text: query, maxResults: 4 }).catch(() => [])
+	]);
+	const rows = [];
+	const seenUrls = new Set();
+	suggestions.forEach((s) => {
+		if (s.type === "NAVIGATION") {
+			const url = /^https?:\/\//.test(s.text) ? s.text : "https://" + s.text;
+			if (seenUrls.has(url)) return;
+			seenUrls.add(url);
+			rows.push({
+				title: s.text.replace(/^https?:\/\//, ""),
+				desc: prettyHost(url),
+				type: "search",
+				action: "search-handoff",
+				url: url,
+				favIconUrl: faviconForUrl(url),
+				emoji: false,
+				keycheck: false,
+				currentTab: false
+			});
+		} else {
+			rows.push({
+				title: s.text,
+				desc: (s.detail && s.detail.a) ? s.detail.a : "Google Search",
+				type: "search",
+				action: "search-handoff",
+				url: "https://www.google.com/search?q=" + encodeURIComponent(s.text),
+				emoji: true,
+				emojiChar: "🔍",
+				keycheck: false,
+				currentTab: false
+			});
+		}
+	});
+	historyItems.forEach((item) => {
+		if (!item.url || seenUrls.has(item.url) || rows.length >= 8) {
+			return;
+		}
+		seenUrls.add(item.url);
+		rows.push({
+			title: item.title || prettyHost(item.url),
+			desc: prettyHost(item.url),
+			type: "search",
+			action: "search-handoff",
+			url: item.url,
+			favIconUrl: faviconForUrl(item.url),
+			emoji: false,
+			keycheck: false,
+			currentTab: false
+		});
+	});
+	return rows;
+}
+
 // Clear actions and append default ones
 const clearActions = () => {
 	getCurrentTab().then((response) => {
@@ -700,6 +772,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		case "open-options":
 			chrome.runtime.openOptionsPage();
 			break;
+		case "get-suggestions":
+			getSuggestions(message.query).then((suggestionRows) => {
+				sendResponse({actions: suggestionRows});
+			});
+			return true;
 		case "close-omni":
 			getCurrentTab().then((response) => {
 				chrome.tabs.sendMessage(response.id, {request: "close-omni"});

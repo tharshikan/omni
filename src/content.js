@@ -339,6 +339,7 @@ $(document).ready(() => {
 			isOpen = true;
 			allowHover = false;
 			lastMouse = null;
+			fallbackState = null;
 			actions = response.actions;
 			recentActions = isRecentLike() ? response.actions.slice() : [];
 			recentQuery = "";
@@ -605,6 +606,27 @@ $(document).ready(() => {
 		}
 	}
 
+	// No-match fallback: sections fill in asynchronously as they arrive
+	var fallbackState = null;
+	function rebuildFallback() {
+		if (!fallbackState) {
+			return;
+		}
+		actions = fallbackState.bookmarks.concat(fallbackState.suggestions).concat(fallbackState.handoffs);
+		populateOmni();
+	}
+
+	// Debounced omnibox-style suggestions (Google suggest + history)
+	var suggestTimer = null;
+	function requestSuggestions(query, callback) {
+		window.clearTimeout(suggestTimer);
+		suggestTimer = window.setTimeout(() => {
+			chrome.runtime.sendMessage({request:"get-suggestions", query:query}, (response) => {
+				callback((response && response.actions) || []);
+			});
+		}, 120);
+	}
+
 	// Search for an action in the omni
 	function search(e) {
 		if (e.keyCode == 37 || e.keyCode == 38 || e.keyCode == 39 || e.keyCode == 40 || e.keyCode == 13 || e.keyCode == 37) {
@@ -617,6 +639,7 @@ $(document).ready(() => {
 			recentQuery = value.trim();
 			updateRecentFilterVisibility();
 			if (value.trim() == "") {
+				fallbackState = null;
 				actions = recentActions.slice();
 				populateOmni();
 				return;
@@ -626,6 +649,7 @@ $(document).ready(() => {
 				// stay crisp and get selected, everything else dims
 				var explorerScores = recentActions.map((recentAction) => scoreRecentAction(recentAction, value));
 				if (explorerScores.some((score) => score > 0)) {
+					fallbackState = null;
 					actions = recentActions.slice();
 					populateOmni();
 					applyExplorerHighlight(explorerScores, false);
@@ -634,6 +658,25 @@ $(document).ready(() => {
 				actions = [];
 			} else {
 				actions = buildRecentMatches(value);
+			}
+			if (actions.length) {
+				// Local matches lead; live suggestions follow as a section
+				fallbackState = null;
+				var localActions = actions;
+				var suggestQuery = value.trim();
+				requestSuggestions(suggestQuery, (rows) => {
+					if (!isRecentLike() || isExplorerFlow() || fallbackState || recentQuery != suggestQuery || !rows.length) {
+						return;
+					}
+					rows.forEach((row) => { row.section = "Suggestions"; });
+					var activeIndex = $(".omni-item-active").attr("data-index");
+					actions = localActions.concat(rows);
+					populateOmni();
+					// Keep whatever was selected: local rows keep their indexes
+					if (activeIndex != null) {
+						activateElement($("#omni-extension #omni-list .omni-item[data-index='" + activeIndex + "']"));
+					}
+				});
 			}
 			if (!actions.length) {
 				// Nothing matched — offer web/AI handoffs as fallback results,
@@ -670,13 +713,15 @@ $(document).ready(() => {
 					item.currentTab = false;
 					return item;
 				});
-				actions = handoffActions;
+				// The fallback composes three async-filled sections:
+				// Bookmarks, live Suggestions, and the search handoffs
+				fallbackState = {query: fallbackQuery, bookmarks: [], suggestions: [], handoffs: handoffActions};
+				rebuildFallback();
 				chrome.runtime.sendMessage({request:"search-bookmarks", query:fallbackQuery}, (response) => {
-					// Only merge if this fallback is still what's on screen
-					if (!isRecentLike() || recentQuery != fallbackQuery || !actions.length || actions[0].action != "search-handoff") {
+					if (!fallbackState || fallbackState.query != fallbackQuery || recentQuery != fallbackQuery) {
 						return;
 					}
-					var bookmarkHits = ((response && response.bookmarks) || [])
+					fallbackState.bookmarks = ((response && response.bookmarks) || [])
 						.filter((bookmark) => bookmark.url)
 						.map((bookmark) => {
 							bookmark.desc = bookmark.desc || bookmark.url;
@@ -687,11 +732,17 @@ $(document).ready(() => {
 						})
 						.sort((a, b) => scoreRecentAction(b, fallbackQuery) - scoreRecentAction(a, fallbackQuery))
 						.slice(0, 6);
-					if (bookmarkHits.length) {
-						actions = bookmarkHits.concat(handoffActions);
-						populateOmni();
-					}
+					rebuildFallback();
 				});
+				requestSuggestions(fallbackQuery, (rows) => {
+					if (!fallbackState || fallbackState.query != fallbackQuery || recentQuery != fallbackQuery) {
+						return;
+					}
+					rows.forEach((row) => { row.section = "Suggestions"; });
+					fallbackState.suggestions = rows;
+					rebuildFallback();
+				});
+				return;
 			}
 			populateOmni();
 			return;
