@@ -333,7 +333,7 @@ $(document).ready(() => {
 		}
 		actions.length && new VirtualizedList.default($("#omni-extension #omni-list")[0], {
 			height: 400,
-			rowHeight: 44,
+			rowHeight: 48,
 			rowCount: actions.length,
 			renderRow,
 			onMount: () => {

@@ -88,7 +88,7 @@
 
 .omni-extension #omni-wrap {
 	position: fixed;
-	width: 640px;
+	width: 680px;
 	margin: auto;
 	top: 96px;
 	right: 0px;
@@ -169,7 +169,7 @@
 /* ---------- Explorer drawer ---------- */
 
 .omni-extension.omni-explorer-mode #omni-wrap {
-	width: 340px;
+	width: 360px;
 	top: 0px;
 	bottom: 0px;
 	left: 0px;
@@ -199,7 +199,7 @@
 }
 .omni-extension.omni-explorer-mode #omni-search {
 	flex: none;
-	height: 46px;
+	height: 50px;
 	padding: 0px 14px;
 }
 .omni-extension.omni-explorer-mode #omni-search-icon {
@@ -208,7 +208,7 @@
 	margin-right: 9px;
 }
 .omni-extension.omni-explorer-mode input {
-	font-size: 14px;
+	font-size: 15px;
 	font-weight: 400;
 }
 .omni-extension.omni-explorer-mode #omni-recent-layout {
@@ -249,7 +249,7 @@
 .omni-extension #omni-search {
 	display: flex;
 	align-items: center;
-	height: 58px;
+	height: 62px;
 	padding: 0px 20px;
 	border-bottom: 1px solid var(--hairline);
 	background: transparent;
@@ -268,7 +268,7 @@
 	border: 0px;
 	outline: none;
 	box-shadow: none;
-	font-size: 20px;
+	font-size: 21px;
 	font-weight: 400;
 	letter-spacing: -0.01em;
 	height: 100%;
@@ -344,7 +344,7 @@
 }
 .omni-extension.omni-recent-mode #omni-search {
 	/* IntelliJ-style compact search row at the top left */
-	height: 42px;
+	height: 46px;
 	padding: 0px 16px;
 }
 .omni-extension #omni-flow-toggle {
@@ -380,7 +380,7 @@
 	margin-right: 9px;
 }
 .omni-extension.omni-recent-mode input {
-	font-size: 14px;
+	font-size: 15px;
 	font-weight: 400;
 }
 
@@ -412,7 +412,7 @@
 	left: 0px;
 	right: 0px;
 	top: 0px;
-	height: 44px;
+	height: 48px;
 	border-radius: 0px;
 	background: var(--select) !important;
 	opacity: 0;
@@ -454,7 +454,7 @@
 .omni-extension .omni-section {
 	display: block;
 	padding: 12px 20px 5px;
-	font-size: 11px;
+	font-size: 12px;
 	font-weight: 600;
 	letter-spacing: 0.05em;
 	text-transform: uppercase;
@@ -463,7 +463,7 @@
 .omni-extension .omni-item {
 	display: flex;
 	align-items: center;
-	height: 44px;
+	height: 48px;
 	width: 100%;
 	border-radius: 0px;
 	box-sizing: border-box;
@@ -482,8 +482,8 @@
 .omni-extension .omni-icon {
 	display: block;
 	flex: none;
-	width: 22px;
-	height: 22px;
+	width: 24px;
+	height: 24px;
 	margin-left: 20px;
 	border-radius: 6px;
 }
@@ -492,10 +492,10 @@
 	align-items: center;
 	justify-content: center;
 	flex: none;
-	width: 22px;
-	height: 22px;
+	width: 24px;
+	height: 24px;
 	margin-left: 20px;
-	font-size: 17px;
+	font-size: 19px;
 	line-height: 1;
 }
 /* Omnibox-style single line: title, a quiet dash, then the subtitle */
@@ -512,7 +512,7 @@
 	flex: 0 1 auto;
 	min-width: 0;
 	color: var(--text) !important;
-	font-size: 14px;
+	font-size: 15px;
 	font-weight: 400;
 	letter-spacing: normal;
 	white-space: nowrap;
@@ -533,7 +533,7 @@
 	flex: 0 1 auto;
 	min-width: 0;
 	color: var(--text-2) !important;
-	font-size: 14px;
+	font-size: 15px;
 	font-weight: 400;
 	white-space: nowrap;
 	overflow: hidden;
@@ -561,7 +561,7 @@
 	margin-left: auto;
 	margin-right: 16px;
 	color: var(--text-2);
-	font-size: 12px;
+	font-size: 13px;
 	font-weight: 400;
 }
 .omni-extension .omni-item-active .omni-select {
@@ -588,14 +588,14 @@
 	align-items: center;
 	justify-content: center;
 	flex: none;
-	width: 24px;
-	height: 24px;
+	width: 26px;
+	height: 26px;
 	margin-right: 14px;
 	border: 0px;
 	border-radius: 7px;
 	background: transparent;
 	color: var(--text-2);
-	font-size: 14px;
+	font-size: 15px;
 	line-height: 1;
 	font-family: inherit;
 	cursor: pointer;
@@ -618,16 +618,16 @@
 	display: inline-flex !important;
 	align-items: center;
 	justify-content: center;
-	font-size: 11px;
+	font-size: 12px;
 	font-weight: 500;
 	font-family: inherit;
 	border-radius: 6px;
 	background-color: var(--key-bg);
 	color: var(--text-2);
 	text-align: center;
-	height: 22px;
-	min-width: 22px;
-	padding-left: 5px;
+	height: 24px;
+	min-width: 24px;
+	padding-left: 6px;
 	padding-right: 5px;
 	box-sizing: border-box;
 	border: 1px solid var(--key-border);
@@ -640,13 +640,13 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	height: 42px;
+	height: 46px;
 	border-top: 1px solid var(--hairline);
 	padding: 0px 16px;
 }
 .omni-extension #omni-results {
 	color: var(--text-3);
-	font-size: 11px;
+	font-size: 12px;
 	font-weight: 500;
 }
 .omni-extension #omni-arrows {
@@ -654,13 +654,13 @@
 	align-items: center;
 	gap: 4px;
 	color: var(--text-3);
-	font-size: 11px;
+	font-size: 12px;
 	font-weight: 400;
 }
 .omni-extension #omni-arrows .omni-shortcut {
-	height: 20px;
-	min-width: 20px;
-	font-size: 10px;
+	height: 22px;
+	min-width: 22px;
+	font-size: 11px;
 }
 
 /* ---------- Toast ---------- */
@@ -670,7 +670,7 @@
 	align-items: center;
 	gap: 7px;
 	font-weight: 500;
-	font-size: 13px;
+	font-size: 14px;
 	position: fixed;
 	width: fit-content;
 	color: var(--text);
