@@ -457,10 +457,21 @@ const resetOmni = () => {
 	actions = search.concat(actions);
 }
 
-// Check if tabs have changed and actions need to be fetched again
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => resetOmni());
-chrome.tabs.onCreated.addListener((tab) => resetOmni());
-chrome.tabs.onRemoved.addListener((tabId, changeInfo) => resetOmni());
+// Check if tabs have changed and actions need to be fetched again.
+// Debounced, and page-load noise is ignored: onUpdated fires many times
+// per navigation, so only meaningful changes schedule a rebuild.
+let resetTimer = null;
+const scheduleResetOmni = () => {
+	clearTimeout(resetTimer);
+	resetTimer = setTimeout(resetOmni, 200);
+};
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+	if (changeInfo.status === "complete" || changeInfo.title || changeInfo.favIconUrl || changeInfo.pinned !== undefined || changeInfo.mutedInfo) {
+		scheduleResetOmni();
+	}
+});
+chrome.tabs.onCreated.addListener((tab) => scheduleResetOmni());
+chrome.tabs.onRemoved.addListener((tabId, changeInfo) => scheduleResetOmni());
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
 	const tab = await chrome.tabs.get(activeInfo.tabId);
 	await trackRecentTab(tab);

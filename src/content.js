@@ -190,7 +190,11 @@ $(document).ready(() => {
 
 	function setDefaultActiveItem() {
 		clearActiveState();
-		var visibleItems = $(".omni-extension #omni-list .omni-item:visible");
+		// Rows are only ever hidden via inline display, so this check needs
+		// no layout pass, unlike jQuery's :visible
+		var visibleItems = $(".omni-extension #omni-list .omni-item").filter(function() {
+			return this.style.display !== "none";
+		});
 		if (!visibleItems.length) {
 			return;
 		}
@@ -303,7 +307,22 @@ $(document).ready(() => {
 		}
 	});
 
-	function renderAction(action, index, keys, img) {
+	function renderActionHtml(action, index) {
+		var keys = "";
+		if (action.keycheck) {
+			keys = "<div class='omni-keys'>";
+			action.keys.forEach(function(key) {
+				keys += "<span class='omni-shortcut'>" + key + "</span>";
+			});
+			keys += "</div>";
+		}
+		var img;
+		if (!action.emoji) {
+			var onload = 'if ("naturalHeight" in this) {if (this.naturalHeight + this.naturalWidth === 0) {this.onerror();return;}} else if (this.width + this.height == 0) {this.onerror();return;}';
+			img = "<img src='"+action.favIconUrl+"' alt='favicon' onload='"+onload+"' onerror='this.src=&quot;"+chrome.runtime.getURL("/assets/globe.svg")+"&quot;' class='omni-icon'>";
+		} else {
+			img = "<span class='omni-emoji-action'>"+action.emojiChar+"</span>";
+		}
 		var skip = "";
 		if (action.action == "search" || action.action == "goto") {
 			skip = "style='display:none'";
@@ -311,49 +330,50 @@ $(document).ready(() => {
 		var actionTitle = isRecentLike() ? highlightRecentMatch(action.title, recentQuery) : escapeHtml(action.title);
 		var actionDesc = escapeHtml(action.desc);
 		var closeBtn = action.type == "tab" && action.action == "switch-tab" ? "<button class='omni-close-tab' title='Close tab'>✕</button>" : "";
-		$("#omni-extension #omni-list").append("<div class='omni-item' "+skip+" data-index='"+index+"' data-type='"+action.type+"' data-current-tab='"+(action.currentTab ? "true" : "false")+"'>"+img+"<div class='omni-item-details'><div class='omni-item-name'>"+actionTitle+"</div><div class='omni-item-desc'>"+actionDesc+"</div></div>"+keys+"<div class='omni-select'>Select <span class='omni-shortcut'>⏎</span></div>"+closeBtn+"</div>");
-		if (!action.emoji) {
-			var loadimg = new Image();
-			loadimg.src = action.favIconUrl;
-
-			// Favicon doesn't load, use a fallback
-			loadimg.onerror = () => {
-				$(".omni-item[data-index='"+index+"'] img").attr("src", chrome.runtime.getURL("/assets/globe.svg"));
-			}
-		}
+		return "<div class='omni-item' "+skip+" data-index='"+index+"' data-type='"+action.type+"' data-current-tab='"+(action.currentTab ? "true" : "false")+"'>"+img+"<div class='omni-item-details'><div class='omni-item-name'>"+actionTitle+"</div><div class='omni-item-desc'>"+actionDesc+"</div></div>"+keys+"<div class='omni-select'>Select <span class='omni-shortcut'>⏎</span></div>"+closeBtn+"</div>";
 	}
 
-	// Add actions to the omni
-	function populateOmni() {
-		$("#omni-extension #omni-list").html("");
-		$("#omni-extension #omni-list").addClass("omni-has-pill").append("<div id='omni-selection'></div>");
-		var lastSection = null;
-		actions.forEach((action, index) => {
+	// Add actions to the omni — built as strings and written in single DOM
+	// updates. Very large lists render the first screenfuls immediately and
+	// the remainder a tick later, so opening always paints instantly.
+	var renderToken = 0;
+	function buildRowsHtml(start, end) {
+		var html = "";
+		var lastSection = start > 0 && actions[start - 1] ? (actions[start - 1].section || null) : null;
+		for (var index = start; index < end; index++) {
+			var action = actions[index];
 			if (action.section && action.section !== lastSection) {
-				$("#omni-extension #omni-list").append("<div class='omni-section'>"+escapeHtml(action.section)+"</div>");
-				lastSection = action.section;
+				html += "<div class='omni-section'>"+escapeHtml(action.section)+"</div>";
 			}
-			var keys = "";
-			if (action.keycheck) {
-					keys = "<div class='omni-keys'>";
-					action.keys.forEach(function(key){
-						keys += "<span class='omni-shortcut'>"+key+"</span>";
-					});
-					keys += "</div>";
-			}
-			
-			// Check if the action has an emoji or a favicon
-			if (!action.emoji) {
-				var onload = 'if ("naturalHeight" in this) {if (this.naturalHeight + this.naturalWidth === 0) {this.onerror();return;}} else if (this.width + this.height == 0) {this.onerror();return;}';
-				var img = "<img src='"+action.favIconUrl+"' alt='favicon' onload='"+onload+"' onerror='this.src=&quot;"+chrome.runtime.getURL("/assets/globe.svg")+"&quot;' class='omni-icon'>";
-				renderAction(action, index, keys, img);
-			} else {
-				var img = "<span class='omni-emoji-action'>"+action.emojiChar+"</span>";
-				renderAction(action, index, keys, img);
-			}
-		})
+			lastSection = action.section || lastSection;
+			html += renderActionHtml(action, index);
+		}
+		return html;
+	}
+	function populateOmni() {
+		renderToken++;
+		var token = renderToken;
+		var firstChunkEnd = Math.min(actions.length, 250);
+		$("#omni-extension #omni-list").addClass("omni-has-pill").html("<div id='omni-selection'></div>" + buildRowsHtml(0, firstChunkEnd));
 		$(".omni-extension #omni-results").html(actions.length+" results");
 		setDefaultActiveItem();
+		if (actions.length > firstChunkEnd) {
+			window.setTimeout(() => {
+				if (token !== renderToken) {
+					return;
+				}
+				$("#omni-extension #omni-list").append(buildRowsHtml(firstChunkEnd, actions.length));
+				// Re-apply per-row state the first chunk pass couldn't cover
+				if (isExplorerFlow() && recentQuery) {
+					applyExplorerHighlight(recentActions.map((recentAction) => scoreRecentAction(recentAction, recentQuery.toLowerCase())), true);
+				} else if (!isRecentLike()) {
+					var inputEl = $("#omni-extension input").get(0);
+					if (inputEl && inputEl.value) {
+						inputEl.dispatchEvent(new Event("input", {bubbles: true}));
+					}
+				}
+			}, 0);
+		}
 	}
 
 	// Add filtered actions to the omni
@@ -843,58 +863,68 @@ $(document).ready(() => {
 				populateOmni();
 				isFiltered = false;
 			}
-			$(".omni-extension #omni-list .omni-item").filter(function(){
-				if (value.startsWith("/tabs")) {
-					$(".omni-item[data-index='"+actions.findIndex(x => x.action == "search")+"']").hide();
-					$(".omni-item[data-index='"+actions.findIndex(x => x.action == "goto")+"']").hide();
-					var tempvalue = value.replace("/tabs ", "");
-					if (tempvalue == "/tabs") {
-						$(this).toggle($(this).attr("data-type") == "tab");
-					} else {
-						tempvalue = value.replace("/tabs ", "");
-						$(this).toggle(($(this).find(".omni-item-name").text().toLowerCase().indexOf(tempvalue) > -1 || $(this).find(".omni-item-desc").text().toLowerCase().indexOf(tempvalue) > -1) && $(this).attr("data-type") == "tab");
-					}
-				} else if (value.startsWith("/remove")) {
-					$(".omni-item[data-index='"+actions.findIndex(x => x.action == "search")+"']").hide();
-					$(".omni-item[data-index='"+actions.findIndex(x => x.action == "goto")+"']").hide();
-					var tempvalue = value.replace("/remove ", "")
-					if (tempvalue == "/remove") {
-						$(this).toggle($(this).attr("data-type") == "bookmark" || $(this).attr("data-type") == "tab");
-					} else {
-						tempvalue = value.replace("/remove ", "");
-						$(this).toggle(($(this).find(".omni-item-name").text().toLowerCase().indexOf(tempvalue) > -1 || $(this).find(".omni-item-desc").text().toLowerCase().indexOf(tempvalue) > -1) && ($(this).attr("data-type") == "bookmark" || $(this).attr("data-type") == "tab"));
-					}
-				} else if (value.startsWith("/actions")) {
-					$(".omni-item[data-index='"+actions.findIndex(x => x.action == "search")+"']").hide();
-					$(".omni-item[data-index='"+actions.findIndex(x => x.action == "goto")+"']").hide();
-					var tempvalue = value.replace("/actions ", "")
-					if (tempvalue == "/actions") {
-						$(this).toggle($(this).attr("data-type") == "action");
-					} else {
-						tempvalue = value.replace("/actions ", "");
-						$(this).toggle(($(this).find(".omni-item-name").text().toLowerCase().indexOf(tempvalue) > -1 || $(this).find(".omni-item-desc").text().toLowerCase().indexOf(tempvalue) > -1) && $(this).attr("data-type") == "action");
-					}
+			// One pass over the rows, matching against the actions data
+			// directly — no per-row DOM reads or repeated index lookups
+			var searchIdx = actions.findIndex(x => x.action == "search");
+			var gotoIdx = actions.findIndex(x => x.action == "goto");
+			var command = null;
+			var query = value;
+			var typeFilter = null;
+			if (value.startsWith("/tabs")) {
+				command = "/tabs"; typeFilter = ["tab"];
+			} else if (value.startsWith("/remove")) {
+				command = "/remove"; typeFilter = ["bookmark", "tab"];
+			} else if (value.startsWith("/actions")) {
+				command = "/actions"; typeFilter = ["action"];
+			}
+			if (command) {
+				query = value.slice(command.length).trim();
+			}
+			var visibleCount = 0;
+			$(".omni-extension #omni-list .omni-item").each(function() {
+				var index = parseInt(this.getAttribute("data-index"), 10);
+				var action = actions[index];
+				if (!action || index === searchIdx || index === gotoIdx) {
+					return;
+				}
+				var show;
+				if (typeFilter) {
+					show = typeFilter.indexOf(action.type) > -1 &&
+						(query == "" || ((action.title || "") + " " + (action.desc || "")).toLowerCase().indexOf(query) > -1);
 				} else {
-					$(this).toggle($(this).find(".omni-item-name").text().toLowerCase().indexOf(value) > -1 || $(this).find(".omni-item-desc").text().toLowerCase().indexOf(value) > -1);
-					if (value == "") {
-						$(".omni-item[data-index='"+actions.findIndex(x => x.action == "search")+"']").hide();
-						$(".omni-item[data-index='"+actions.findIndex(x => x.action == "goto")+"']").hide();
-					} else if (!validURL(value)) {
-						$(".omni-item[data-index='"+actions.findIndex(x => x.action == "search")+"']").show();
-						$(".omni-item[data-index='"+actions.findIndex(x => x.action == "goto")+"']").hide();
-						$(".omni-item[data-index='"+actions.findIndex(x => x.action == "search")+"'] .omni-item-name").html('\"'+value+'\"');
-					} else {
-						$(".omni-item[data-index='"+actions.findIndex(x => x.action == "search")+"']").hide();
-						$(".omni-item[data-index='"+actions.findIndex(x => x.action == "goto")+"']").show();
-						$(".omni-item[data-index='"+actions.findIndex(x => x.action == "goto")+"'] .omni-item-name").html(value);
-					}
+					show = ((action.title || "") + " " + (action.desc || "")).toLowerCase().indexOf(value) > -1;
+				}
+				this.style.display = show ? "" : "none";
+				if (show) {
+					visibleCount++;
 				}
 			});
-		}
-		
-		$(".omni-extension #omni-results").html($("#omni-extension #omni-list .omni-item:visible").length+" results");
+			// The search/goto rows are handled once, outside the loop
+			var searchRow = $(".omni-item[data-index='" + searchIdx + "']");
+			var gotoRow = $(".omni-item[data-index='" + gotoIdx + "']");
+			if (command || value == "") {
+				searchRow.hide();
+				gotoRow.hide();
+			} else if (!validURL(value)) {
+				searchRow.show().find(".omni-item-name").html('"' + escapeHtml(value) + '"');
+				gotoRow.hide();
+				if (searchRow.length) {
+					visibleCount++;
+				}
+			} else {
+				searchRow.hide();
+				gotoRow.show().find(".omni-item-name").html(escapeHtml(value));
+				if (gotoRow.length) {
+					visibleCount++;
+				}
+			}
+			$(".omni-extension #omni-results").html(visibleCount + " results");
 			setDefaultActiveItem();
+			return;
 		}
+
+		setDefaultActiveItem();
+	}
 
 	// Handle actions from the omni
 	function handleAction(e) {
@@ -1013,7 +1043,10 @@ $(document).ready(() => {
 			setDefaultActiveItem();
 			return;
 		}
-		var sibling = direction < 0 ? activeItem.prevAll(".omni-item:visible").first() : activeItem.nextAll(".omni-item:visible").first();
+		var isShown = function() {
+			return this.style.display !== "none";
+		};
+		var sibling = direction < 0 ? activeItem.prevAll(".omni-item").filter(isShown).first() : activeItem.nextAll(".omni-item").filter(isShown).first();
 		if (sibling.length) {
 			activateElement(sibling);
 		}
