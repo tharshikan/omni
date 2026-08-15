@@ -274,9 +274,14 @@ $(document).ready(() => {
 	}
 
 	// Close the omni
-	function closeOmni() {
+	function closeOmni(performedAction) {
 		if (window.location.href == chrome.runtime.getURL("newtab.html")) {
-			chrome.runtime.sendMessage({request:"restore-new-tab"});
+			// Restore the page this tab replaced only when dismissing —
+			// after a real action the handlers navigate or close this tab,
+			// and restoring would steal focus from the destination
+			if (!performedAction) {
+				chrome.runtime.sendMessage({request:"restore-new-tab"});
+			}
 		} else {
 			isOpen = false;
 			var closingMode = currentMode;
@@ -339,9 +344,16 @@ $(document).ready(() => {
 		if (!shortcut) {
 			return;
 		}
-		closeOmni();
+		var onNewTabPage = window.location.href == chrome.runtime.getURL("newtab.html");
+		closeOmni(true);
 		if (shortcut.request) {
 			chrome.runtime.sendMessage({request:shortcut.request});
+			if (onNewTabPage) {
+				chrome.runtime.sendMessage({request:"close-new-tab"});
+			}
+		} else if (onNewTabPage) {
+			// This tab is a placeholder — navigate it instead of leaving it behind
+			window.open(shortcut.url, "_self");
 		} else {
 			window.open(shortcut.url, "_blank");
 		}
@@ -581,7 +593,14 @@ $(document).ready(() => {
 		if (action && action.type == "action") {
 			chrome.runtime.sendMessage({request:"record-recent-action", action:action});
 		}
-		closeOmni();
+		closeOmni(true);
+		if (action && window.location.href == chrome.runtime.getURL("newtab.html") && (action.action == "switch-tab" || action.action == "search-handoff")) {
+			// The destination lives in another tab — this placeholder tab
+			// would otherwise linger; close it once the action is sent
+			window.setTimeout(() => {
+				chrome.runtime.sendMessage({request:"close-new-tab"});
+			}, 50);
+		}
 		if ($(".omni-extension input").val().toLowerCase().startsWith("/remove")) {
 			chrome.runtime.sendMessage({request:"remove", type:action.type, action:action});
 		} else if ($(".omni-extension input").val().toLowerCase().startsWith("/history")) {

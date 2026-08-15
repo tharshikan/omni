@@ -376,10 +376,16 @@ const getBookmarks = () => {
 
 // Lots of different actions
 const switchTab = (tab) => {
-	chrome.tabs.highlight({
-		tabs: tab.index,
-		windowId: tab.windowId
-	})
+	// Select by id — indexes captured when the list was built go stale as
+	// tabs open and close (e.g. the newtab.html workaround)
+	if (tab.id) {
+		chrome.tabs.update(tab.id, { active: true });
+	} else {
+		chrome.tabs.highlight({
+			tabs: tab.index,
+			windowId: tab.windowId
+		})
+	}
 	chrome.windows.update(
 		tab.windowId,
 		{ focused: true }
@@ -611,6 +617,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 			break;
 		case "restore-new-tab":
 			restoreNewTab();
+			break;
+		case "close-new-tab":
+			if (sender.tab && sender.tab.id) {
+				chrome.tabs.remove(sender.tab.id);
+			}
 			break;
 		case "close-omni":
 			getCurrentTab().then((response) => {
