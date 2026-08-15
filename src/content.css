@@ -10,8 +10,8 @@
 		--text: rgba(255, 255, 255, 0.92);
 		--text-2: rgba(255, 255, 255, 0.55);
 		--text-3: rgba(255, 255, 255, 0.35);
-		--select: rgba(255, 255, 255, 0.08);
-		--select-hover: rgba(255, 255, 255, 0.045);
+		--select: rgba(10, 132, 255, 0.28);
+		--select-hover: rgba(255, 255, 255, 0.06);
 		--accent: #0a84ff;
 		--key-bg: rgba(255, 255, 255, 0.07);
 		--key-border: rgba(255, 255, 255, 0.08);
@@ -24,22 +24,22 @@
 @media (prefers-color-scheme: light) {
 	.omni-extension,
 	#omni-extension-toast {
-		--panel: rgba(246, 246, 248, 0.82);
-		--panel-solid: #f6f6f8;
-		--hairline: rgba(0, 0, 0, 0.07);
-		--edge: rgba(255, 255, 255, 0.55);
-		--text: rgba(0, 0, 0, 0.88);
-		--text-2: rgba(0, 0, 0, 0.5);
-		--text-3: rgba(0, 0, 0, 0.32);
-		--select: rgba(0, 0, 0, 0.06);
-		--select-hover: rgba(0, 0, 0, 0.035);
+		--panel: rgba(255, 255, 255, 0.88);
+		--panel-solid: #ffffff;
+		--hairline: rgba(0, 0, 0, 0.08);
+		--edge: rgba(255, 255, 255, 0.9);
+		--text: rgba(0, 0, 0, 0.92);
+		--text-2: rgba(0, 0, 0, 0.55);
+		--text-3: rgba(0, 0, 0, 0.38);
+		--select: rgba(0, 122, 255, 0.13);
+		--select-hover: rgba(0, 0, 0, 0.05);
 		--accent: #007aff;
-		--key-bg: rgba(0, 0, 0, 0.045);
-		--key-border: rgba(0, 0, 0, 0.06);
-		--placeholder: rgba(0, 0, 0, 0.26);
-		--overlay: rgba(0, 0, 0, 0.14);
-		--match: rgba(255, 214, 10, 0.5);
-		--shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 24px 64px rgba(0, 0, 0, 0.22), 0 4px 16px rgba(0, 0, 0, 0.1);
+		--key-bg: rgba(0, 0, 0, 0.05);
+		--key-border: rgba(0, 0, 0, 0.07);
+		--placeholder: rgba(0, 0, 0, 0.28);
+		--overlay: rgba(0, 0, 0, 0.22);
+		--match: rgba(255, 214, 10, 0.55);
+		--shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.1), 0 28px 72px rgba(0, 0, 0, 0.28), 0 6px 20px rgba(0, 0, 0, 0.12);
 	}
 }
 
@@ -354,6 +354,14 @@
 }
 .omni-extension .omni-item-active .omni-select {
 	display: flex !important;
+	color: var(--accent);
+	font-weight: 500;
+}
+.omni-extension .omni-item-active .omni-select .omni-shortcut {
+	background-color: color-mix(in srgb, var(--accent) 16%, transparent);
+	border-color: color-mix(in srgb, var(--accent) 22%, transparent);
+	box-shadow: none;
+	color: var(--accent);
 }
 .omni-extension .omni-keys {
 	display: flex;
