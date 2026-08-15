@@ -1,6 +1,6 @@
 {
-	"name": "omni-tharshi",
-	"description": "Supercharge Chrome with commands, shortcuts, and more",
+	"name": "Leap",
+	"description": "Leap between tabs, commands, and history — a fast command palette for Chrome",
 	"offline_enabled": true,
 	"version": "1.4.7",
 	"manifest_version": 3,
