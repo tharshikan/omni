@@ -628,7 +628,10 @@ $(document).ready(() => {
 	}
 
 
-	$(document).keydown((e) => {
+	// Capture phase on window: runs before the page's own handlers, so the
+	// omni owns the keyboard while it is open even on sites with global
+	// key handling, and stray keystrokes are pulled back into its input
+	window.addEventListener("keydown", (e) => {
 		// Global Alt+Shift shortcuts (work whether or not the omni is open)
 		if (e.altKey && e.shiftKey && !e.repeat) {
 			if (e.keyCode == 80) {
@@ -666,36 +669,69 @@ $(document).ready(() => {
 			return;
 		}
 
-		if (e.keyCode == 38) {
+		// The page must not react to keys while the omni is open
+		e.stopPropagation();
+
+		// If the page kept or stole focus, pull the keystroke into the omni
+		// input: refocusing during keydown makes the character land there
+		var input = $("#omni-extension input").get(0);
+		var printable = e.key && e.key.length == 1 && !e.metaKey && !e.ctrlKey && !e.altKey;
+		if (input && (printable || e.key == "Backspace") && document.activeElement !== input) {
+			input.focus();
+			return;
+		}
+
+		if (e.key == "ArrowUp" || e.keyCode == 38) {
 			// Up key
+			e.preventDefault();
 			if (currentMode == "recent" && $(".omni-shortcut-item-active").length) {
 				moveShortcutSelection(-1);
 			} else {
 				moveResultSelection(-1);
 			}
-		} else if (e.keyCode == 40) {
+		} else if (e.key == "ArrowDown" || e.keyCode == 40) {
 			// Down key
+			e.preventDefault();
 			if (currentMode == "recent" && $(".omni-shortcut-item-active").length) {
 				moveShortcutSelection(1);
 			} else {
 				moveResultSelection(1);
 			}
-		} else if (e.keyCode == 37) {
-			moveAcrossColumns(true);
-		} else if (e.keyCode == 39) {
-			moveAcrossColumns(false);
-		} else if (e.keyCode == 27) {
+		} else if (e.key == "ArrowLeft" || e.key == "ArrowRight" || e.keyCode == 37 || e.keyCode == 39) {
+			// Left/right switch columns in recent mode; elsewhere the caret keeps them
+			if (currentMode == "recent") {
+				e.preventDefault();
+				moveAcrossColumns(e.key == "ArrowLeft" || e.keyCode == 37);
+			}
+		} else if (e.key == "Tab" || e.keyCode == 9) {
+			// Tab: keep focus where it is
+			e.preventDefault();
+		} else if (e.key == "Escape" || e.keyCode == 27) {
 			// Esc key
+			e.preventDefault();
 			closeOmni();
-		} else if (e.keyCode == 13) {
+		} else if (e.key == "Enter" || e.keyCode == 13) {
 			// Enter key
+			e.preventDefault();
 			if ($(".omni-shortcut-item-active").length) {
 				handleShortcutAction(e);
 			} else {
 				handleAction(e);
 			}
 		}
-	});
+	}, true);
+
+	// Keep keypress/keyup from the page too while the omni is open
+	window.addEventListener("keypress", (e) => {
+		if (isOpen) {
+			e.stopPropagation();
+		}
+	}, true);
+	window.addEventListener("keyup", (e) => {
+		if (isOpen) {
+			e.stopPropagation();
+		}
+	}, true);
 
 	// Recieve messages from background
 	chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
