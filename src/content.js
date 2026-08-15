@@ -157,6 +157,8 @@ $(document).ready(() => {
 	function scoreRecentAction(action, query) {
 		var title = (action.title || "").toLowerCase();
 		var desc = (action.desc || "").toLowerCase();
+		// The subline shows a clean domain, but the full URL stays searchable
+		var url = (action.url || "").toLowerCase();
 		var normalizedTitle = title.replace(/^["'`]+|["'`]+$/g, "");
 		var score = 0;
 		if (title.startsWith(query)) {
@@ -166,7 +168,7 @@ $(document).ready(() => {
 		} else if (title.indexOf(query) > -1) {
 			score += 3;
 		}
-		if (desc.indexOf(query) > -1) {
+		if (desc.indexOf(query) > -1 || url.indexOf(query) > -1) {
 			score += 1;
 		}
 		if (normalizedTitle === query) {
@@ -311,7 +313,7 @@ $(document).ready(() => {
 			if (action.emoji) {
 				img = "<span class='omni-emoji-action'>"+action.emojiChar+"</span>"
 			}
-			return $("<div class='omni-item' data-index='"+index+"' data-type='"+action.type+"' data-url='"+action.url+"' data-current-tab='"+(action.currentTab ? "true" : "false")+"'>"+img+"<div class='omni-item-details'><div class='omni-item-name'>"+action.title+"</div><div class='omni-item-desc'>"+action.url+"</div></div>"+keys+"<div class='omni-select'>Select <span class='omni-shortcut'>⏎</span></div></div>")[0]
+			return $("<div class='omni-item' data-index='"+index+"' data-type='"+action.type+"' data-url='"+action.url+"' data-current-tab='"+(action.currentTab ? "true" : "false")+"'>"+img+"<div class='omni-item-details'><div class='omni-item-name'>"+action.title+"</div><div class='omni-item-desc'>"+(action.desc || action.url)+"</div></div>"+keys+"<div class='omni-select'>Select <span class='omni-shortcut'>⏎</span></div></div>")[0]
 		}
 		actions.length && new VirtualizedList.default($("#omni-extension #omni-list")[0], {
 			height: 400,
@@ -542,7 +544,7 @@ $(document).ready(() => {
 			return {
 				action: {
 					title: shortcut.title,
-					desc: shortcut.url ? shortcut.url.replace(/^https?:\/\//, "").replace(/\/$/, "") : "Omni shortcut",
+					desc: shortcut.url ? shortcut.url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/.*$/, "") : "Leap shortcut",
 					type: "action",
 					action: shortcut.request ? shortcut.request : "url",
 					url: shortcut.url,
@@ -677,7 +679,7 @@ $(document).ready(() => {
 					var bookmarkHits = ((response && response.bookmarks) || [])
 						.filter((bookmark) => bookmark.url)
 						.map((bookmark) => {
-							bookmark.desc = bookmark.url;
+							bookmark.desc = bookmark.desc || bookmark.url;
 							bookmark.section = "Bookmarks";
 							bookmark.currentTab = false;
 							bookmark.keycheck = false;

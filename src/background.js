@@ -10,6 +10,19 @@ const faviconForUrl = (url) => {
 	return chrome.runtime.getURL("/_favicon/?pageUrl=" + encodeURIComponent(url) + "&size=64");
 }
 
+// Clean display name for a URL: the domain without protocol, www, or path
+const prettyHost = (url) => {
+	try {
+		const u = new URL(url);
+		if (u.protocol === "http:" || u.protocol === "https:") {
+			return u.hostname.replace(/^www\./, "");
+		}
+		return (u.protocol + "//" + (u.hostname || u.pathname.split("/")[0])).replace(/\/$/, "");
+	} catch (e) {
+		return url;
+	}
+}
+
 const canOpenOmniInTab = (tab) => {
 	return tab && tab.url && !tab.url.includes("chrome://") && !tab.url.includes("chrome.google.com");
 }
@@ -79,7 +92,7 @@ const getRecentActions = async () => {
 		.map((tab) => {
 			return {
 				title: tab.title || tab.url,
-				desc: tab.url,
+				desc: prettyHost(tab.url),
 				type: "tab",
 				action: "switch-tab",
 				id: tab.id,
@@ -96,7 +109,7 @@ const getRecentActions = async () => {
 	if (canTrackTab(currentTab)) {
 		recentTabs.unshift({
 			title: currentTab.title || currentTab.url,
-			desc: "Current tab • " + currentTab.url,
+			desc: "Current tab • " + prettyHost(currentTab.url),
 			type: "tab",
 			action: "switch-tab",
 			id: currentTab.id,
@@ -131,7 +144,7 @@ const getExplorerTabs = async () => {
 			const isCurrent = currentTab && tab.id === currentTab.id;
 			return {
 				title: tab.title || tab.url,
-				desc: (isCurrent ? "Current tab • " : "") + tab.url,
+				desc: (isCurrent ? "Current tab • " : "") + prettyHost(tab.url),
 				type: "tab",
 				action: "switch-tab",
 				id: tab.id,
@@ -390,7 +403,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 const getTabs = () => {
 	chrome.tabs.query({}, (tabs) => {
 		tabs.forEach((tab) => {
-			tab.desc = "Chrome tab";
+			tab.desc = prettyHost(tab.url);
 			tab.keycheck = false;
 			tab.action = "switch-tab";
 			tab.type = "tab";
@@ -635,6 +648,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 					}
 					action.type = "bookmark";
 					if (action.url) {
+						action.desc = prettyHost(action.url);
 						action.favIconUrl = faviconForUrl(action.url);
 						action.emoji = false;
 					} else {
@@ -650,6 +664,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 					}
 					action.type = "bookmark";
 					if (action.url) {
+						action.desc = prettyHost(action.url);
 						action.favIconUrl = faviconForUrl(action.url);
 						action.emoji = false;
 					} else {
