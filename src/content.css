@@ -10,7 +10,7 @@
 		--text: rgba(255, 255, 255, 0.92);
 		--text-2: rgba(255, 255, 255, 0.55);
 		--text-3: rgba(255, 255, 255, 0.35);
-		--select: rgba(10, 132, 255, 0.28);
+		--select: rgba(255, 255, 255, 0.1);
 		--select-hover: rgba(255, 255, 255, 0.06);
 		--accent: #0a84ff;
 		--key-bg: rgba(255, 255, 255, 0.07);
@@ -31,7 +31,7 @@
 		--text: rgba(0, 0, 0, 0.92);
 		--text-2: rgba(0, 0, 0, 0.55);
 		--text-3: rgba(0, 0, 0, 0.38);
-		--select: rgba(0, 122, 255, 0.13);
+		--select: rgba(0, 0, 0, 0.06);
 		--select-hover: rgba(0, 0, 0, 0.05);
 		--accent: #007aff;
 		--key-bg: rgba(0, 0, 0, 0.05);
@@ -413,13 +413,37 @@
 	right: 0px;
 	top: 0px;
 	height: 44px;
-	border-radius: 11px;
+	border-radius: 10px;
 	background: var(--select) !important;
 	opacity: 0;
 	z-index: -1;
 	transform: translateY(0px);
 	transition: transform 0.24s cubic-bezier(0.3, 1.35, 0.4, 1), height 0.24s cubic-bezier(0.3, 1.35, 0.4, 1), opacity 0.15s ease;
 	pointer-events: none;
+}
+/* Chrome-omnibox accent bar on the left edge of the selection */
+.omni-extension #omni-selection::before {
+	content: "";
+	position: absolute;
+	left: 0px;
+	top: 7px;
+	bottom: 7px;
+	width: 3px;
+	border-radius: 2px;
+	background: var(--accent);
+}
+.omni-extension #omni-list:not(.omni-has-pill) .omni-item-active {
+	position: relative;
+}
+.omni-extension #omni-list:not(.omni-has-pill) .omni-item-active::before {
+	content: "";
+	position: absolute;
+	left: 0px;
+	top: 7px;
+	bottom: 7px;
+	width: 3px;
+	border-radius: 2px;
+	background: var(--accent);
 }
 .omni-extension #omni-list.omni-has-pill .omni-item-active {
 	background-color: transparent;
