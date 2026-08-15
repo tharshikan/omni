@@ -56,5 +56,5 @@ grid.addEventListener("click", (e) => {
 });
 
 storage.get(THEME_KEY).then((data) => {
-	select((data && data[THEME_KEY]) || "auto");
+	select((data && data[THEME_KEY]) || "bright");
 });

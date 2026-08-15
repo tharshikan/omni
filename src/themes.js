@@ -50,7 +50,14 @@ var LEAP_THEMES = (() => {
 			"--shadow": "0 0 0 0.5px rgba(0, 0, 0, 0.6), 0 24px 64px rgba(0, 0, 0, 0.55), 0 4px 16px rgba(0, 0, 0, 0.35)"
 		}
 	});
+	// Fully opaque white — no frost, so the page never tints it grey
+	const bright = light("Bright White", "#ffffff", "#007aff", "rgba(0, 0, 0, 0.78)");
+	bright.vars["--panel"] = "#ffffff";
+	bright.vars["--hairline"] = "rgba(0, 0, 0, 0.07)";
+	bright.vars["--key-bg"] = "rgba(0, 0, 0, 0.04)";
+	bright.vars["--key-border"] = "rgba(0, 0, 0, 0.06)";
 	return {
+		"bright": bright,
 		"white": light("Pure White", "#ffffff", "#007aff", "rgba(0, 0, 0, 0.75)"),
 		"paper": light("Paper", "#faf7f0", "#c2410c", "rgba(41, 30, 20, 0.85)"),
 		"sakura": light("Sakura", "#fdf2f6", "#ec4899"),
