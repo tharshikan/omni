@@ -449,6 +449,31 @@
 	margin-left: auto;
 	margin-right: 14px;
 }
+.omni-extension .omni-close-tab {
+	display: none;
+	align-items: center;
+	justify-content: center;
+	flex: none;
+	width: 24px;
+	height: 24px;
+	margin-right: 10px;
+	border: 0px;
+	border-radius: 7px;
+	background: transparent;
+	color: var(--text-2);
+	font-size: 14px;
+	line-height: 1;
+	font-family: inherit;
+	cursor: pointer;
+}
+.omni-extension .omni-item:hover .omni-close-tab,
+.omni-extension .omni-item-active .omni-close-tab {
+	display: flex;
+}
+.omni-extension .omni-close-tab:hover {
+	background: var(--select-hover);
+	color: var(--text);
+}
 .omni-extension .omni-item-active .omni-keys {
 	display: none !important;
 }

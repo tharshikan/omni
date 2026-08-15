@@ -140,6 +140,9 @@ $(document).ready(() => {
 		updateInputPlaceholder();
 		updateRecentFilterVisibility();
 		renderRecentShortcuts();
+		if (navigator.platform.toUpperCase().indexOf("MAC") < 0) {
+			$("#omni-close-key").text("Ctrl⌫");
+		}
 
 		// Get checkmark image for toast
 		$("#omni-extension-toast img").attr("src", chrome.runtime.getURL("assets/check.svg"));
@@ -164,7 +167,8 @@ $(document).ready(() => {
 		}
 		var actionTitle = isRecentLike() ? highlightRecentMatch(action.title, recentQuery) : escapeHtml(action.title);
 		var actionDesc = escapeHtml(action.desc);
-		$("#omni-extension #omni-list").append("<div class='omni-item' "+skip+" data-index='"+index+"' data-type='"+action.type+"' data-current-tab='"+(action.currentTab ? "true" : "false")+"'>"+img+"<div class='omni-item-details'><div class='omni-item-name'>"+actionTitle+"</div><div class='omni-item-desc'>"+actionDesc+"</div></div>"+keys+"<div class='omni-select'>Select <span class='omni-shortcut'>⏎</span></div></div>");
+		var closeBtn = action.type == "tab" && action.action == "switch-tab" ? "<button class='omni-close-tab' title='Close tab'>✕</button>" : "";
+		$("#omni-extension #omni-list").append("<div class='omni-item' "+skip+" data-index='"+index+"' data-type='"+action.type+"' data-current-tab='"+(action.currentTab ? "true" : "false")+"'>"+img+"<div class='omni-item-details'><div class='omni-item-name'>"+actionTitle+"</div><div class='omni-item-desc'>"+actionDesc+"</div></div>"+keys+"<div class='omni-select'>Select <span class='omni-shortcut'>⏎</span></div>"+closeBtn+"</div>");
 		if (!action.emoji) {
 			var loadimg = new Image();
 			loadimg.src = action.favIconUrl;
@@ -333,6 +337,31 @@ $(document).ready(() => {
 			return;
 		}
 		activateElement($(this));
+	}
+
+	// Close a tab row in place: the tab is closed and the palette stays
+	// open so several tabs can be pruned in a row
+	function closeTabRow(item) {
+		var index = parseInt(item.attr("data-index"), 10);
+		var action = actions[index];
+		if (!action || action.type != "tab" || action.action != "switch-tab") {
+			return;
+		}
+		chrome.runtime.sendMessage({request:"remove", type:"tab", action:action});
+		actions.splice(index, 1);
+		recentActions = recentActions.filter((recentAction) => !(recentAction.type == "tab" && recentAction.id == action.id));
+		populateOmni();
+		var rows = $("#omni-extension #omni-list .omni-item:visible");
+		if (rows.length) {
+			activateElement(rows.eq(Math.min(index, rows.length - 1)));
+		}
+	}
+
+	function closeActiveTabRow() {
+		var activeItem = $(".omni-item-active");
+		if (activeItem.length) {
+			closeTabRow(activeItem);
+		}
 	}
 
 	function handleShortcutAction(e) {
@@ -777,11 +806,18 @@ $(document).ready(() => {
 		// The page must not react to keys while the omni is open
 		e.stopPropagation();
 
+		// Cmd/Ctrl+Backspace closes the selected tab, palette stays open
+		if ((e.metaKey || e.ctrlKey) && (e.key == "Backspace" || e.keyCode == 8)) {
+			e.preventDefault();
+			closeActiveTabRow();
+			return;
+		}
+
 		// If the page kept or stole focus, pull the keystroke into the omni
 		// input: refocusing during keydown makes the character land there
 		var input = $("#omni-extension input").get(0);
 		var printable = e.key && e.key.length == 1 && !e.metaKey && !e.ctrlKey && !e.altKey;
-		if (input && (printable || e.key == "Backspace") && document.activeElement !== input) {
+		if (input && (printable || (e.key == "Backspace" && !e.metaKey && !e.ctrlKey)) && document.activeElement !== input) {
 			input.focus();
 			return;
 		}
@@ -868,6 +904,10 @@ $(document).ready(() => {
 	$(document).on("mouseover", ".omni-shortcut-item:not(.omni-shortcut-item-active)", hoverShortcutItem);
 	// "input" fires for every value change, including ones with no keyup (IME, dictation, paste)
 	$(document).on("input", ".omni-extension input", search);
+	$(document).on("click", ".omni-extension .omni-close-tab", function(e) {
+		e.stopPropagation();
+		closeTabRow($(this).closest(".omni-item"));
+	});
 	$(document).on("click", ".omni-item", handleAction);
 	$(document).on("click", ".omni-shortcut-item", handleShortcutAction);
 	$(document).on("click", ".omni-extension #omni-overlay", closeOmni);
