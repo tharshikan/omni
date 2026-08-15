@@ -26,8 +26,8 @@
 		},
 		"open-recents": {
 			"suggested_key": {
-				"default": "Ctrl+E",
-				"mac": "Command+E"
+				"default": "Ctrl+Shift+A",
+				"mac": "Command+Shift+A"
 			},
 			"description": "Open recent tabs and actions"
 		}

@@ -242,9 +242,10 @@ $(document).ready(() => {
 			isFiltered = false;
 			$("#omni-extension input").val("");
 			updateRecentFilterVisibility();
+			// Unhide before populating so setDefaultActiveItem can see the items (:visible)
+			$("#omni-extension").removeClass("omni-closing");
 			populateOmni();
 			$("html, body").stop();
-			$("#omni-extension").removeClass("omni-closing");
 			window.setTimeout(() => {
 				$("#omni-extension input").focus();
 				focusLock.on($("#omni-extension input").get(0));
@@ -370,7 +371,8 @@ $(document).ready(() => {
 						return b.score - a.score;
 					}
 					if (a.action.currentTab !== b.action.currentTab) {
-						return a.action.currentTab ? -1 : 1;
+						// The tab you are already on is never "the right one" to switch to
+						return a.action.currentTab ? 1 : -1;
 					}
 					return a.index - b.index;
 				})
