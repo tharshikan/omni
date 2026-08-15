@@ -107,6 +107,40 @@ const getRecentActions = async () => {
 	return recentTabs;
 }
 
+// All open tabs in tab-strip order (current window first) for the explorer drawer
+const getExplorerTabs = async () => {
+	const [tabs, currentTab] = await Promise.all([chrome.tabs.query({}), getCurrentTab()]);
+	const currentWindowId = currentTab ? currentTab.windowId : null;
+	return tabs
+		.filter((tab) => tab.id && tab.url)
+		.sort((a, b) => {
+			if (a.windowId !== b.windowId) {
+				if (a.windowId === currentWindowId) return -1;
+				if (b.windowId === currentWindowId) return 1;
+				return a.windowId - b.windowId;
+			}
+			return a.index - b.index;
+		})
+		.map((tab) => {
+			const isCurrent = currentTab && tab.id === currentTab.id;
+			return {
+				title: tab.title || tab.url,
+				desc: (isCurrent ? "Current tab • " : "") + tab.url,
+				type: "tab",
+				action: "switch-tab",
+				id: tab.id,
+				index: tab.index,
+				windowId: tab.windowId,
+				url: tab.url,
+				favIconUrl: tab.favIconUrl,
+				emoji: !tab.favIconUrl,
+				emojiChar: "🗂",
+				keycheck: false,
+				currentTab: !!isCurrent
+			};
+		});
+}
+
 // Clear actions and append default ones
 const clearActions = () => {
 	getCurrentTab().then((response) => {
@@ -490,6 +524,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		case "get-recents":
 			getRecentActions().then((recentActions) => {
 				sendResponse({actions: recentActions});
+			});
+			return true;
+		case "get-explorer-tabs":
+			getExplorerTabs().then((explorerTabs) => {
+				sendResponse({actions: explorerTabs});
 			});
 			return true;
 		case "get-launch-mode":

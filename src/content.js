@@ -65,6 +65,16 @@ $(document).ready(() => {
 		if (!visibleItems.length) {
 			return;
 		}
+		if (currentMode == "explorer") {
+			// File-explorer semantics: open with the current tab highlighted
+			var currentItem = visibleItems.filter(function() {
+				return $(this).attr("data-current-tab") == "true";
+			}).first();
+			if (currentItem.length) {
+				activateElement(currentItem);
+				return;
+			}
+		}
 		if (isRecentLike()) {
 			var nonCurrentItem = visibleItems.filter(function() {
 				return $(this).attr("data-current-tab") != "true";
@@ -250,7 +260,7 @@ $(document).ready(() => {
 	function openOmni(mode) {
 		currentMode = mode || "default";
 		updateInputPlaceholder();
-		const request = isRecentLike() ? "get-recents" : "get-actions";
+		const request = currentMode == "explorer" ? "get-explorer-tabs" : isRecentLike() ? "get-recents" : "get-actions";
 		chrome.runtime.sendMessage({request:request}, (response) => {
 			isOpen = true;
 			allowHover = false;
@@ -356,6 +366,9 @@ $(document).ready(() => {
 		actions.splice(index, 1);
 		recentActions = recentActions.filter((recentAction) => !(recentAction.type == "tab" && recentAction.id == action.id));
 		populateOmni();
+		if (currentMode == "explorer" && recentQuery) {
+			applyExplorerHighlight(recentActions.map((recentAction) => scoreRecentAction(recentAction, recentQuery.toLowerCase())), true);
+		}
 		var rows = $("#omni-extension #omni-list .omni-item:visible");
 		if (rows.length) {
 			activateElement(rows.eq(Math.min(index, rows.length - 1)));
@@ -444,6 +457,73 @@ $(document).ready(() => {
 		return !!pattern.test(str);
 	}
 
+	// Score recents and rail shortcuts against a query, best first
+	function buildRecentMatches(value) {
+		var shortcutCandidates = recentShortcuts.map((shortcut, index) => {
+			return {
+				action: {
+					title: shortcut.title,
+					desc: shortcut.url ? shortcut.url.replace(/^https?:\/\//, "").replace(/\/$/, "") : "Omni shortcut",
+					type: "action",
+					action: shortcut.request ? shortcut.request : "url",
+					url: shortcut.url,
+					favIconUrl: chrome.runtime.getURL(shortcut.icon),
+					emoji: false,
+					keycheck: false,
+					currentTab: false
+				},
+				index: recentActions.length + index
+			};
+		});
+		return recentActions.map((action, index) => {
+			return {
+				action: action,
+				index: index
+			};
+		}).concat(shortcutCandidates)
+			.map((item) => {
+				item.score = scoreRecentAction(item.action, value);
+				return item;
+			})
+			.filter((item) => item.score > 0)
+			.sort((a, b) => {
+				if (b.score !== a.score) {
+					return b.score - a.score;
+				}
+				if (a.action.currentTab !== b.action.currentTab) {
+					// The tab you are already on is never "the right one" to switch to
+					return a.action.currentTab ? 1 : -1;
+				}
+				return a.index - b.index;
+			})
+			.map((item) => item.action);
+	}
+
+	// Dim non-matching explorer rows in place and select the best hit
+	function applyExplorerHighlight(scores, keepSelection) {
+		var bestIndex = -1;
+		var bestScore = 0;
+		var hitCount = 0;
+		$("#omni-extension #omni-list .omni-item").each(function() {
+			var index = parseInt($(this).attr("data-index"), 10);
+			var hit = scores[index] > 0;
+			$(this).toggleClass("omni-dim", !hit);
+			if (hit) {
+				hitCount++;
+				// Ties go to tabs you are not already on
+				var rankScore = scores[index] + (actions[index] && !actions[index].currentTab ? 0.5 : 0);
+				if (rankScore > bestScore) {
+					bestScore = rankScore;
+					bestIndex = index;
+				}
+			}
+		});
+		$(".omni-extension #omni-results").html(hitCount + " of " + actions.length + " tabs");
+		if (!keepSelection && bestIndex > -1) {
+			activateElement($("#omni-extension #omni-list .omni-item[data-index='" + bestIndex + "']"));
+		}
+	}
+
 	// Search for an action in the omni
 	function search(e) {
 		if (e.keyCode == 37 || e.keyCode == 38 || e.keyCode == 39 || e.keyCode == 40 || e.keyCode == 13 || e.keyCode == 37) {
@@ -458,45 +538,20 @@ $(document).ready(() => {
 				populateOmni();
 				return;
 			}
-			// The rail shortcuts join the results while searching
-			var shortcutCandidates = recentShortcuts.map((shortcut, index) => {
-				return {
-					action: {
-						title: shortcut.title,
-						desc: shortcut.url ? shortcut.url.replace(/^https?:\/\//, "").replace(/\/$/, "") : "Omni shortcut",
-						type: "action",
-						action: shortcut.request ? shortcut.request : "url",
-						url: shortcut.url,
-						favIconUrl: chrome.runtime.getURL(shortcut.icon),
-						emoji: false,
-						keycheck: false,
-						currentTab: false
-					},
-					index: recentActions.length + index
-				};
-			});
-			actions = recentActions.map((action, index) => {
-				return {
-					action: action,
-					index: index
-				};
-			}).concat(shortcutCandidates)
-				.map((item) => {
-					item.score = scoreRecentAction(item.action, value);
-					return item;
-				})
-				.filter((item) => item.score > 0)
-				.sort((a, b) => {
-					if (b.score !== a.score) {
-						return b.score - a.score;
-					}
-					if (a.action.currentTab !== b.action.currentTab) {
-						// The tab you are already on is never "the right one" to switch to
-						return a.action.currentTab ? 1 : -1;
-					}
-					return a.index - b.index;
-				})
-				.map((item) => item.action);
+			if (currentMode == "explorer") {
+				// Explorer keeps every tab visible in place: matches stay
+				// crisp and get selected, everything else dims
+				var explorerScores = recentActions.map((recentAction) => scoreRecentAction(recentAction, value));
+				if (explorerScores.some((score) => score > 0)) {
+					actions = recentActions.slice();
+					populateOmni();
+					applyExplorerHighlight(explorerScores, false);
+					return;
+				}
+				actions = [];
+			} else {
+				actions = buildRecentMatches(value);
+			}
 			if (!actions.length) {
 				// Nothing matched — offer web/AI handoffs as fallback results,
 				// and pull in matching bookmarks as their own section

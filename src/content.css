@@ -368,7 +368,10 @@
 	width: 100%;
 	border-radius: 11px;
 	box-sizing: border-box;
-	transition: background-color 0.1s ease;
+	transition: background-color 0.1s ease, opacity 0.12s ease;
+}
+.omni-extension .omni-item.omni-dim {
+	opacity: 0.35;
 }
 .omni-extension .omni-item:hover {
 	cursor: pointer;
