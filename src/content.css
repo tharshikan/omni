@@ -254,8 +254,11 @@
 	margin: 14px auto;
 }
 .omni-extension.omni-recent-mode #omni-search {
-	display: none;
+	/* Collapse instead of display:none — the input must stay focusable to capture typing */
+	height: 0px;
+	padding: 0px;
 	border-bottom: 0px;
+	overflow: hidden;
 }
 .omni-extension.omni-recent-mode input {
 	position: fixed;

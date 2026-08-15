@@ -246,9 +246,11 @@ $(document).ready(() => {
 			$("#omni-extension").removeClass("omni-closing");
 			populateOmni();
 			$("html, body").stop();
+			// Grab focus right away so the first keystrokes land in the omni,
+			// then again shortly after for pages that steal focus back
+			$("#omni-extension input").focus();
+			focusLock.on($("#omni-extension input").get(0));
 			window.setTimeout(() => {
-				$("#omni-extension input").focus();
-				focusLock.on($("#omni-extension input").get(0));
 				$("#omni-extension input").focus();
 			}, 100);
 		});
@@ -263,7 +265,9 @@ $(document).ready(() => {
 			currentMode = "default";
 			recentActions = [];
 			recentQuery = "";
+			focusLock.off($("#omni-extension input").get(0));
 			$("#omni-extension input").val("");
+			$("#omni-extension input").blur();
 			updateRecentFilterVisibility();
 			$("#omni-extension").addClass("omni-closing");
 		}
@@ -307,7 +311,8 @@ $(document).ready(() => {
 	// Autocomplete commands. Since they all start with different letters, it can be the default behavior
 	function checkShortHand(e, value) {
 		var el = $(".omni-extension input");
-		if (e.keyCode != 8) {
+		var isDelete = e.originalEvent && typeof e.originalEvent.inputType == "string" && e.originalEvent.inputType.indexOf("delete") == 0;
+		if (!isDelete) {
 			if (value == "/t") {
 				el.val("/tabs ")
 			} else if (value == "/b") {
@@ -694,7 +699,8 @@ $(document).ready(() => {
 	$(document).on("click", "#open-page-omni-extension-thing", openShortcuts);
 	$(document).on("mouseover", ".omni-extension .omni-item:not(.omni-item-active)", hoverItem);
 	$(document).on("mouseover", ".omni-shortcut-item:not(.omni-shortcut-item-active)", hoverShortcutItem);
-	$(document).on("keyup", ".omni-extension input", search);
+	// "input" fires for every value change, including ones with no keyup (IME, dictation, paste)
+	$(document).on("input", ".omni-extension input", search);
 	$(document).on("click", ".omni-item", handleAction);
 	$(document).on("click", ".omni-shortcut-item", handleShortcutAction);
 	$(document).on("click", ".omni-extension #omni-overlay", closeOmni);
