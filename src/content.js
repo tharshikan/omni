@@ -142,6 +142,30 @@ $(document).ready(() => {
 		}
 	}
 
+	// Chrome-omnibox behavior: arrowing through rows fills the input with
+	// the selection — suggestion text for searches, the URL for pages.
+	// Programmatic value changes fire no input event, so the filter stays
+	// anchored to what the user actually typed.
+	function syncInputToSelection() {
+		if (!isRecentLike()) {
+			return;
+		}
+		var activeItem = $(".omni-item-active");
+		if (!activeItem.length) {
+			return;
+		}
+		var action = actions[parseInt(activeItem.attr("data-index"), 10)];
+		if (!action || action.section == "Search with") {
+			return;
+		}
+		var fillValue = (action.type == "search") ? action.title : (action.url || action.title);
+		var inputEl = $("#omni-extension input").get(0);
+		if (inputEl && fillValue) {
+			inputEl.value = fillValue;
+			inputEl.setSelectionRange(fillValue.length, fillValue.length);
+		}
+	}
+
 	function setDefaultActiveItem() {
 		clearActiveState();
 		var visibleItems = $(".omni-extension #omni-list .omni-item:visible");
@@ -1066,6 +1090,7 @@ $(document).ready(() => {
 				moveShortcutSelection(-1);
 			} else {
 				moveResultSelection(-1);
+				syncInputToSelection();
 			}
 		} else if (e.key == "ArrowDown" || e.keyCode == 40) {
 			// Down key
@@ -1074,6 +1099,7 @@ $(document).ready(() => {
 				moveShortcutSelection(1);
 			} else {
 				moveResultSelection(1);
+				syncInputToSelection();
 			}
 		} else if (e.key == "ArrowLeft" || e.key == "ArrowRight" || e.keyCode == 37 || e.keyCode == 39) {
 			// Left/right switch columns in recent mode; elsewhere the caret keeps them
