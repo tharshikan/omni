@@ -312,9 +312,9 @@ const getCurrentTab = async () => {
 // Restore the new tab page (workaround to show Omni in new tab page)
 function restoreNewTab() {
 	getCurrentTab().then((response) => {
-		chrome.tabs.create({
-			url: newtaburl
-		}).then(() => {
+		// newtaburl can be lost when the service worker restarts, fall back to a regular new tab
+		const createOptions = newtaburl ? {url: newtaburl} : {};
+		chrome.tabs.create(createOptions).then(() => {
 			chrome.tabs.remove(response.id);
 		})
 	})

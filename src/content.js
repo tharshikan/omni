@@ -144,7 +144,7 @@ $(document).ready(() => {
 		});
 
 		// New tab page workaround
-		if (window.location.href == "chrome-extension://mpanekjjajcabgnlbabmopeenljeoggm/newtab.html") {
+		if (window.location.href == chrome.runtime.getURL("newtab.html")) {
 			chrome.runtime.sendMessage({request:"get-launch-mode"}, (response) => {
 				openOmni(response && response.mode ? response.mode : "default");
 			});
@@ -255,7 +255,7 @@ $(document).ready(() => {
 
 	// Close the omni
 	function closeOmni() {
-		if (window.location.href == "chrome-extension://mpanekjjajcabgnlbabmopeenljeoggm/newtab.html") {
+		if (window.location.href == chrome.runtime.getURL("newtab.html")) {
 			chrome.runtime.sendMessage({request:"restore-new-tab"});
 		} else {
 			isOpen = false;
@@ -601,33 +601,66 @@ $(document).ready(() => {
 	}
 
 
-	// Check which keys are down
-	var down = [];
-
 	$(document).keydown((e) => {
-		down[e.keyCode] = true;
-		if (down[38]) {
+		// Global Alt+Shift shortcuts (work whether or not the omni is open)
+		if (e.altKey && e.shiftKey && !e.repeat) {
+			if (e.keyCode == 80) {
+				// Alt+Shift+P: pin/unpin tab
+				if (actions.find(x => x.action == "pin") != undefined) {
+					chrome.runtime.sendMessage({request:"pin-tab"});
+				} else {
+					chrome.runtime.sendMessage({request:"unpin-tab"});
+				}
+				chrome.runtime.sendMessage({request:"get-actions"}, (response) => {
+					actions = response.actions;
+					populateOmni();
+				});
+				return;
+			} else if (e.keyCode == 77) {
+				// Alt+Shift+M: mute/unmute tab
+				if (actions.find(x => x.action == "mute") != undefined) {
+					chrome.runtime.sendMessage({request:"mute-tab"});
+				} else {
+					chrome.runtime.sendMessage({request:"unmute-tab"});
+				}
+				chrome.runtime.sendMessage({request:"get-actions"}, (response) => {
+					actions = response.actions;
+					populateOmni();
+				});
+				return;
+			} else if (e.keyCode == 67) {
+				// Alt+Shift+C: compose email
+				window.open("mailto:");
+				return;
+			}
+		}
+
+		if (!isOpen) {
+			return;
+		}
+
+		if (e.keyCode == 38) {
 			// Up key
 			if (currentMode == "recent" && $(".omni-shortcut-item-active").length) {
 				moveShortcutSelection(-1);
 			} else {
 				moveResultSelection(-1);
 			}
-		} else if (down[40]) {
+		} else if (e.keyCode == 40) {
 			// Down key
 			if (currentMode == "recent" && $(".omni-shortcut-item-active").length) {
 				moveShortcutSelection(1);
 			} else {
 				moveResultSelection(1);
 			}
-		} else if (down[37] && isOpen) {
+		} else if (e.keyCode == 37) {
 			moveAcrossColumns(true);
-		} else if (down[39] && isOpen) {
+		} else if (e.keyCode == 39) {
 			moveAcrossColumns(false);
-		} else if (down[27] && isOpen) {
+		} else if (e.keyCode == 27) {
 			// Esc key
 			closeOmni();
-		} else if (down[13] && isOpen) {
+		} else if (e.keyCode == 13) {
 			// Enter key
 			if ($(".omni-shortcut-item-active").length) {
 				handleShortcutAction(e);
@@ -635,32 +668,6 @@ $(document).ready(() => {
 				handleAction(e);
 			}
 		}
-	}).keyup((e) => {
-		if (down[18] && down[16] && down[80]) {
-			if (actions.find(x => x.action == "pin") != undefined) {
-				chrome.runtime.sendMessage({request:"pin-tab"});
-			} else {
-				chrome.runtime.sendMessage({request:"unpin-tab"});
-			}
-			chrome.runtime.sendMessage({request:"get-actions"}, (response) => {
-				actions = response.actions;
-				populateOmni();
-			});
-		} else if (down[18] && down[16] && down[77]) {
-			if (actions.find(x => x.action == "mute") != undefined) {
-				chrome.runtime.sendMessage({request:"mute-tab"});
-			} else {
-				chrome.runtime.sendMessage({request:"unmute-tab"});
-			}
-			chrome.runtime.sendMessage({request:"get-actions"}, (response) => {
-				actions = response.actions;
-				populateOmni();
-			});
-		} else if (down[18] && down[16] && down[67]) {
-			window.open("mailto:");
-		}
-
-		down = [];
 	});
 
 	// Recieve messages from background
