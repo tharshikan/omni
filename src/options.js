@@ -58,3 +58,12 @@ grid.addEventListener("click", (e) => {
 storage.get(THEME_KEY).then((data) => {
 	select((data && data[THEME_KEY]) || "bright");
 });
+
+const SUGGEST_KEY = "leapLiveSuggestions";
+const suggestToggle = document.getElementById("live-suggestions");
+storage.get(SUGGEST_KEY).then((data) => {
+	suggestToggle.checked = !(data && data[SUGGEST_KEY] === false);
+});
+suggestToggle.addEventListener("change", () => {
+	storage.set({ [SUGGEST_KEY]: suggestToggle.checked });
+});

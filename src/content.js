@@ -38,6 +38,12 @@ $(document).ready(() => {
 		paletteExplorerFlow = !!(data && data.leapPaletteExplorerFlow);
 	});
 
+	// Live suggestions (Google suggest + history) — on unless switched off
+	var liveSuggestions = true;
+	chrome.storage.local.get("leapLiveSuggestions").then((data) => {
+		liveSuggestions = !(data && data.leapLiveSuggestions === false);
+	});
+
 	// Apply the chosen theme by writing its variables onto the UI roots;
 	// "auto" clears them so the system palette in the stylesheet wins
 	var currentTheme = "bright";
@@ -65,8 +71,14 @@ $(document).ready(() => {
 	});
 	if (chrome.storage.onChanged) {
 		chrome.storage.onChanged.addListener((changes, area) => {
-			if (area == "local" && changes.leapTheme) {
+			if (area != "local") {
+				return;
+			}
+			if (changes.leapTheme) {
 				applyTheme(changes.leapTheme.newValue || "bright");
+			}
+			if (changes.leapLiveSuggestions) {
+				liveSuggestions = changes.leapLiveSuggestions.newValue !== false;
 			}
 		});
 	}
@@ -619,6 +631,9 @@ $(document).ready(() => {
 	// Debounced omnibox-style suggestions (Google suggest + history)
 	var suggestTimer = null;
 	function requestSuggestions(query, callback) {
+		if (!liveSuggestions) {
+			return;
+		}
 		window.clearTimeout(suggestTimer);
 		suggestTimer = window.setTimeout(() => {
 			chrome.runtime.sendMessage({request:"get-suggestions", query:query}, (response) => {
