@@ -208,8 +208,8 @@
 	margin-right: 9px;
 }
 .omni-extension.omni-explorer-mode input {
-	font-size: 13.5px;
-	font-weight: 500;
+	font-size: 14px;
+	font-weight: 400;
 }
 .omni-extension.omni-explorer-mode #omni-recent-layout {
 	flex: 1;
@@ -380,8 +380,8 @@
 	margin-right: 9px;
 }
 .omni-extension.omni-recent-mode input {
-	font-size: 13.5px;
-	font-weight: 500;
+	font-size: 14px;
+	font-weight: 400;
 }
 
 /* ---------- List ---------- */
@@ -488,9 +488,9 @@
 	flex: 0 1 auto;
 	min-width: 0;
 	color: var(--text) !important;
-	font-size: 13.5px;
-	font-weight: 500;
-	letter-spacing: -0.01em;
+	font-size: 14px;
+	font-weight: 400;
+	letter-spacing: normal;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -510,7 +510,7 @@
 	flex: 0 1 auto;
 	min-width: 0;
 	color: var(--text-2) !important;
-	font-size: 12.5px;
+	font-size: 14px;
 	font-weight: 400;
 	white-space: nowrap;
 	overflow: hidden;
