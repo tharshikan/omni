@@ -28,6 +28,16 @@ $(document).ready(() => {
 		return currentMode == "recent" || currentMode == "explorer";
 	}
 
+	// Explorer-style search (all tabs in order, dim non-matches) applies to
+	// the drawer always, and to the recents palette when the user opts in
+	var paletteExplorerFlow = false;
+	function isExplorerFlow() {
+		return currentMode == "explorer" || (currentMode == "recent" && paletteExplorerFlow);
+	}
+	chrome.storage.local.get("leapPaletteExplorerFlow").then((data) => {
+		paletteExplorerFlow = !!(data && data.leapPaletteExplorerFlow);
+	});
+
 	function updateRecentFilterVisibility() {
 		var hasQuery = $("#omni-extension input").val().length > 0;
 		$("#omni-extension").toggleClass("omni-recent-mode", currentMode == "recent");
@@ -65,7 +75,7 @@ $(document).ready(() => {
 		if (!visibleItems.length) {
 			return;
 		}
-		if (currentMode == "explorer") {
+		if (isExplorerFlow()) {
 			// File-explorer semantics: open with the current tab highlighted
 			var currentItem = visibleItems.filter(function() {
 				return $(this).attr("data-current-tab") == "true";
@@ -260,7 +270,7 @@ $(document).ready(() => {
 	function openOmni(mode) {
 		currentMode = mode || "default";
 		updateInputPlaceholder();
-		const request = currentMode == "explorer" ? "get-explorer-tabs" : isRecentLike() ? "get-recents" : "get-actions";
+		const request = isExplorerFlow() ? "get-explorer-tabs" : isRecentLike() ? "get-recents" : "get-actions";
 		chrome.runtime.sendMessage({request:request}, (response) => {
 			isOpen = true;
 			allowHover = false;
@@ -270,6 +280,7 @@ $(document).ready(() => {
 			recentQuery = "";
 			isFiltered = false;
 			$("#omni-extension input").val("");
+			$("#omni-flow-checkbox").prop("checked", paletteExplorerFlow);
 			updateRecentFilterVisibility();
 			// Unhide before populating so setDefaultActiveItem can see the items (:visible)
 			window.clearTimeout(closeTimer);
@@ -366,7 +377,7 @@ $(document).ready(() => {
 		actions.splice(index, 1);
 		recentActions = recentActions.filter((recentAction) => !(recentAction.type == "tab" && recentAction.id == action.id));
 		populateOmni();
-		if (currentMode == "explorer" && recentQuery) {
+		if (isExplorerFlow() && recentQuery) {
 			applyExplorerHighlight(recentActions.map((recentAction) => scoreRecentAction(recentAction, recentQuery.toLowerCase())), true);
 		}
 		var rows = $("#omni-extension #omni-list .omni-item:visible");
@@ -538,9 +549,9 @@ $(document).ready(() => {
 				populateOmni();
 				return;
 			}
-			if (currentMode == "explorer") {
-				// Explorer keeps every tab visible in place: matches stay
-				// crisp and get selected, everything else dims
+			if (isExplorerFlow()) {
+				// Explorer flow keeps every tab visible in place: matches
+				// stay crisp and get selected, everything else dims
 				var explorerScores = recentActions.map((recentAction) => scoreRecentAction(recentAction, value));
 				if (explorerScores.some((score) => score > 0)) {
 					actions = recentActions.slice();
@@ -991,6 +1002,14 @@ $(document).ready(() => {
 	$(document).on("click", ".omni-extension .omni-close-tab", function(e) {
 		e.stopPropagation();
 		closeTabRow($(this).closest(".omni-item"));
+	});
+	$(document).on("change", "#omni-flow-checkbox", function() {
+		paletteExplorerFlow = this.checked;
+		chrome.storage.local.set({leapPaletteExplorerFlow: paletteExplorerFlow});
+		if (isOpen && currentMode == "recent") {
+			// Reopen so the list is refetched with the newly chosen flow
+			openOmni("recent");
+		}
 	});
 	$(document).on("click", ".omni-item", handleAction);
 	$(document).on("click", ".omni-shortcut-item", handleShortcutAction);
