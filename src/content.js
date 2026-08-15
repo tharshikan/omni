@@ -384,13 +384,34 @@ $(document).ready(() => {
 				populateOmni();
 				return;
 			}
+			// The rail shortcuts join the results while searching
+			var shortcutCandidates = recentShortcuts.map((shortcut, index) => {
+				return {
+					action: {
+						title: shortcut.title,
+						desc: shortcut.url ? shortcut.url.replace(/^https?:\/\//, "").replace(/\/$/, "") : "Omni shortcut",
+						type: "action",
+						action: shortcut.request ? shortcut.request : "url",
+						url: shortcut.url,
+						favIconUrl: chrome.runtime.getURL(shortcut.icon),
+						emoji: false,
+						keycheck: false,
+						currentTab: false
+					},
+					index: recentActions.length + index
+				};
+			});
 			actions = recentActions.map((action, index) => {
 				return {
 					action: action,
-					score: scoreRecentAction(action, value),
 					index: index
 				};
-			}).filter((item) => item.score > 0)
+			}).concat(shortcutCandidates)
+				.map((item) => {
+					item.score = scoreRecentAction(item.action, value);
+					return item;
+				})
+				.filter((item) => item.score > 0)
 				.sort((a, b) => {
 					if (b.score !== a.score) {
 						return b.score - a.score;
