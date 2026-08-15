@@ -4,6 +4,12 @@ let launchMode = "default";
 const RECENT_ITEMS_KEY = "omniRecentItems";
 const RECENT_ITEMS_LIMIT = 25;
 
+// Chrome's local favicon cache: instant, works for unloaded tabs and pages
+// whose favicon can't be hotlinked (auth walls, bot protection, page CSP)
+const faviconForUrl = (url) => {
+	return chrome.runtime.getURL("/_favicon/?pageUrl=" + encodeURIComponent(url) + "&size=64");
+}
+
 const canOpenOmniInTab = (tab) => {
 	return tab && tab.url && !tab.url.includes("chrome://") && !tab.url.includes("chrome.google.com");
 }
@@ -80,8 +86,8 @@ const getRecentActions = async () => {
 				index: tab.index,
 				windowId: tab.windowId,
 				url: tab.url,
-				favIconUrl: tab.favIconUrl,
-				emoji: !tab.favIconUrl,
+				favIconUrl: faviconForUrl(tab.url),
+				emoji: false,
 				emojiChar: "🗂",
 				keycheck: false,
 				currentTab: false
@@ -97,8 +103,8 @@ const getRecentActions = async () => {
 			index: currentTab.index,
 			windowId: currentTab.windowId,
 			url: currentTab.url,
-			favIconUrl: currentTab.favIconUrl,
-			emoji: !currentTab.favIconUrl,
+			favIconUrl: faviconForUrl(currentTab.url),
+			emoji: false,
 			emojiChar: "🗂",
 			keycheck: false,
 			currentTab: true
@@ -132,8 +138,8 @@ const getExplorerTabs = async () => {
 				index: tab.index,
 				windowId: tab.windowId,
 				url: tab.url,
-				favIconUrl: tab.favIconUrl,
-				emoji: !tab.favIconUrl,
+				favIconUrl: faviconForUrl(tab.url),
+				emoji: false,
 				emojiChar: "🗂",
 				keycheck: false,
 				currentTab: !!isCurrent
@@ -388,6 +394,9 @@ const getTabs = () => {
 			tab.keycheck = false;
 			tab.action = "switch-tab";
 			tab.type = "tab";
+			if (tab.url) {
+				tab.favIconUrl = faviconForUrl(tab.url);
+			}
 		})
 		actions = tabs.concat(actions);
 	});
@@ -625,8 +634,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 						data.splice(index, 1);
 					}
 					action.type = "bookmark";
-					action.emoji = true;
-					action.emojiChar = "⭐️";
+					if (action.url) {
+						action.favIconUrl = faviconForUrl(action.url);
+						action.emoji = false;
+					} else {
+						action.emoji = true;
+						action.emojiChar = "⭐️";
+					}
 					action.action = "bookmark";
 					action.keyCheck = false;
 				})
@@ -635,8 +649,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 						data.splice(index, 1);
 					}
 					action.type = "bookmark";
-					action.emoji = true;
-					action.emojiChar = "⭐️";
+					if (action.url) {
+						action.favIconUrl = faviconForUrl(action.url);
+						action.emoji = false;
+					} else {
+						action.emoji = true;
+						action.emojiChar = "⭐️";
+					}
 					action.action = "bookmark";
 					action.keyCheck = false;
 				})
