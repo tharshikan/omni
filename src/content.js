@@ -183,7 +183,12 @@ $(document).ready(() => {
 	// Add actions to the omni
 	function populateOmni() {
 		$("#omni-extension #omni-list").html("");
+		var lastSection = null;
 		actions.forEach((action, index) => {
+			if (action.section && action.section !== lastSection) {
+				$("#omni-extension #omni-list").append("<div class='omni-section'>"+escapeHtml(action.section)+"</div>");
+				lastSection = action.section;
+			}
 			var keys = "";
 			if (action.keycheck) {
 					keys = "<div class='omni-keys'>";
@@ -493,10 +498,11 @@ $(document).ready(() => {
 				})
 				.map((item) => item.action);
 			if (!actions.length) {
-				// Nothing matched — offer web/AI handoffs as fallback results
+				// Nothing matched — offer web/AI handoffs as fallback results,
+				// and pull in matching bookmarks as their own section
 				var fallbackQuery = value.trim();
 				var encodedQuery = encodeURIComponent(fallbackQuery);
-				actions = [
+				var handoffActions = [
 					{
 						title: 'Search Google for "' + fallbackQuery + '"',
 						desc: "Press Enter to open the results in a new tab",
@@ -521,9 +527,32 @@ $(document).ready(() => {
 				].map((item) => {
 					item.type = "search";
 					item.action = "search-handoff";
+					item.section = "Search with";
 					item.keycheck = false;
 					item.currentTab = false;
 					return item;
+				});
+				actions = handoffActions;
+				chrome.runtime.sendMessage({request:"search-bookmarks", query:fallbackQuery}, (response) => {
+					// Only merge if this fallback is still what's on screen
+					if (!isRecentLike() || recentQuery != fallbackQuery || !actions.length || actions[0].action != "search-handoff") {
+						return;
+					}
+					var bookmarkHits = ((response && response.bookmarks) || [])
+						.filter((bookmark) => bookmark.url)
+						.map((bookmark) => {
+							bookmark.desc = bookmark.url;
+							bookmark.section = "Bookmarks";
+							bookmark.currentTab = false;
+							bookmark.keycheck = false;
+							return bookmark;
+						})
+						.sort((a, b) => scoreRecentAction(b, fallbackQuery) - scoreRecentAction(a, fallbackQuery))
+						.slice(0, 6);
+					if (bookmarkHits.length) {
+						actions = bookmarkHits.concat(handoffActions);
+						populateOmni();
+					}
 				});
 			}
 			populateOmni();
