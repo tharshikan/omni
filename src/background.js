@@ -190,7 +190,7 @@ const getSuggestions = async (query) => {
 			rows.push({
 				title: s.text.replace(/^https?:\/\//, ""),
 				desc: prettyHost(url),
-				type: "search",
+				type: "history",
 				action: "search-handoff",
 				url: url,
 				favIconUrl: faviconForUrl(url),
@@ -220,7 +220,7 @@ const getSuggestions = async (query) => {
 		rows.push({
 			title: item.title || prettyHost(item.url),
 			desc: prettyHost(item.url),
-			type: "search",
+			type: "history",
 			action: "search-handoff",
 			url: item.url,
 			favIconUrl: faviconForUrl(item.url),

@@ -226,9 +226,6 @@
 .omni-extension.omni-explorer-mode #omni-footer {
 	flex: none;
 }
-.omni-extension.omni-explorer-mode .omni-item {
-	height: 52px;
-}
 .omni-extension.omni-explorer-mode #omni-overlay {
 	background: transparent;
 }
@@ -415,7 +412,7 @@
 	left: 0px;
 	right: 0px;
 	top: 0px;
-	height: 56px;
+	height: 44px;
 	border-radius: 11px;
 	background: var(--select);
 	opacity: 0;
@@ -442,9 +439,9 @@
 .omni-extension .omni-item {
 	display: flex;
 	align-items: center;
-	height: 56px;
+	height: 44px;
 	width: 100%;
-	border-radius: 11px;
+	border-radius: 10px;
 	box-sizing: border-box;
 	transition: background-color 0.1s ease, opacity 0.12s ease;
 }
@@ -477,16 +474,21 @@
 	font-size: 17px;
 	line-height: 1;
 }
+/* Omnibox-style single line: title, a quiet dash, then the subtitle */
 .omni-extension .omni-item-details {
-	display: block;
+	display: flex;
+	align-items: baseline;
 	flex: 1;
 	min-width: 0;
 	margin-left: 12px;
 	margin-right: 12px;
 }
 .omni-extension .omni-item-name {
+	display: block;
+	flex: 0 1 auto;
+	min-width: 0;
 	color: var(--text);
-	font-size: 14px;
+	font-size: 13.5px;
 	font-weight: 500;
 	letter-spacing: -0.01em;
 	white-space: nowrap;
@@ -495,7 +497,7 @@
 }
 .omni-extension .omni-item-name .omni-match {
 	display: inline;
-	font-weight: inherit;
+	font-weight: 600;
 	color: inherit;
 	background: var(--match);
 	border-radius: 4px;
@@ -504,13 +506,29 @@
 	-webkit-box-decoration-break: clone;
 }
 .omni-extension .omni-item-desc {
+	display: block;
+	flex: 0 1 auto;
+	min-width: 0;
 	color: var(--text-2);
-	margin-top: 2px;
-	font-size: 12px;
+	font-size: 12.5px;
 	font-weight: 400;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
+}
+.omni-extension .omni-item-desc:empty {
+	display: none;
+}
+.omni-extension .omni-item-desc::before {
+	content: "–";
+	margin: 0px 8px;
+	color: var(--text-3);
+}
+/* URL-ish subtitles read in accent blue, Chrome-omnibox style */
+.omni-extension .omni-item[data-type="tab"] .omni-item-desc,
+.omni-extension .omni-item[data-type="bookmark"] .omni-item-desc,
+.omni-extension .omni-item[data-type="history"] .omni-item-desc {
+	color: var(--accent);
 }
 .omni-extension .omni-select {
 	display: none;
