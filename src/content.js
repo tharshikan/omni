@@ -451,6 +451,20 @@ $(document).ready(() => {
 					return a.index - b.index;
 				})
 				.map((item) => item.action);
+			if (!actions.length) {
+				// Nothing matched — offer a Google search as the fallback result
+				actions = [{
+					title: 'Search Google for "' + value.trim() + '"',
+					desc: "Press Enter to open the results in a new tab",
+					type: "search",
+					action: "google-search",
+					url: "https://www.google.com/search?q=" + encodeURIComponent(value.trim()),
+					emoji: true,
+					emojiChar: "🔍",
+					keycheck: false,
+					currentTab: false
+				}];
+			}
 			populateOmni();
 			return;
 		}
@@ -592,6 +606,9 @@ $(document).ready(() => {
 					break;
 				case "new-tab":
 					window.open("");
+					break;
+				case "google-search":
+					window.open(action.url);
 					break;
 				case "email":
 					window.open("mailto:");
