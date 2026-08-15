@@ -495,15 +495,14 @@
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
+/* Chrome-omnibox emphasis: matched characters go bold, no background */
 .omni-extension .omni-item-name .omni-match {
 	display: inline;
-	font-weight: 600;
+	font-weight: 700;
 	color: inherit;
-	background: var(--match);
-	border-radius: 4px;
-	padding: 0px 1px;
-	box-decoration-break: clone;
-	-webkit-box-decoration-break: clone;
+	background: transparent;
+	border-radius: 0px;
+	padding: 0px;
 }
 .omni-extension .omni-item-desc {
 	display: block;
