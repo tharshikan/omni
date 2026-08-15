@@ -84,3 +84,43 @@ scaleSlider.addEventListener("input", () => {
 	scaleValue.textContent = scaleSlider.value + "%";
 	storage.set({ [SCALE_KEY]: scaleSlider.value / 100 });
 });
+
+// Keyboard shortcuts: Chrome owns command bindings, so show the live ones
+// and deep-link to Chrome's editor where they can be changed
+const COMMAND_LABELS = {
+	"open-omni": "Open the command palette",
+	"open-recents": "Open the recents switcher",
+	"open-explorer": "Toggle the explorer drawer"
+};
+const shortcutsList = document.getElementById("shortcuts-list");
+const renderShortcutRow = (label, shortcut) => {
+	const row = document.createElement("div");
+	row.className = "shortcut-row";
+	const name = document.createElement("span");
+	name.textContent = label;
+	const key = document.createElement("kbd");
+	if (shortcut) {
+		key.textContent = shortcut;
+	} else {
+		key.textContent = "Not set";
+		key.className = "unset";
+	}
+	row.appendChild(name);
+	row.appendChild(key);
+	shortcutsList.appendChild(row);
+};
+if (typeof chrome !== "undefined" && chrome.commands && chrome.commands.getAll) {
+	chrome.commands.getAll().then((commands) => {
+		Object.keys(COMMAND_LABELS).forEach((name) => {
+			const command = commands.find((c) => c.name === name);
+			renderShortcutRow(COMMAND_LABELS[name], command && command.shortcut);
+		});
+	});
+} else {
+	Object.keys(COMMAND_LABELS).forEach((name) => renderShortcutRow(COMMAND_LABELS[name], null));
+}
+document.getElementById("edit-shortcuts").addEventListener("click", () => {
+	if (typeof chrome !== "undefined" && chrome.tabs) {
+		chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
+	}
+});

@@ -109,6 +109,44 @@
 			.switch input:checked + .knob { background: var(--accent); }
 			.switch input:checked + .knob::after { transform: translateX(18px); }
 			#ui-scale { width: 220px; flex: none; accent-color: var(--accent); cursor: pointer; }
+			.shortcut-row {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				padding: 9px 0;
+				border-bottom: 1px solid var(--hairline);
+				font-size: 14px;
+			}
+			.shortcut-row:last-child { border-bottom: 0; }
+			kbd {
+				display: inline-block;
+				min-width: 22px;
+				padding: 3px 8px;
+				border-radius: 6px;
+				background: color-mix(in srgb, var(--text) 6%, transparent);
+				border: 1px solid var(--hairline);
+				box-shadow: 0 1px 0 var(--hairline);
+				font-family: inherit;
+				font-size: 12.5px;
+				font-weight: 500;
+				text-align: center;
+			}
+			kbd.unset { color: var(--text-2); font-style: italic; }
+			.btn {
+				margin-top: 14px;
+				padding: 8px 16px;
+				border: 0;
+				border-radius: 9px;
+				background: var(--accent);
+				color: #fff;
+				font-family: inherit;
+				font-size: 13px;
+				font-weight: 600;
+				cursor: pointer;
+			}
+			.btn:hover { filter: brightness(1.08); }
+			.kbd-ref { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; color: var(--text-2); font-size: 13px; }
+			.kbd-ref kbd { margin-right: 3px; }
 			.scale-badge {
 				display: inline-block;
 				margin-left: 8px;
@@ -148,6 +186,23 @@
 					<input type="checkbox" id="live-suggestions">
 					<span class="knob"></span>
 				</label>
+			</div>
+			<h2 class="section-gap">Keyboard shortcuts</h2>
+			<div class="setting shortcuts-card">
+				<div class="setting-text" style="width:100%">
+					<div id="shortcuts-list"></div>
+					<div class="setting-desc" style="margin-top:12px">Chrome manages these bindings — click below to change them, then press the keys you want next to each Leap command.</div>
+					<button id="edit-shortcuts" class="btn">Customize shortcuts in Chrome</button>
+					<div class="setting-name" style="margin-top:20px">Inside the palette</div>
+					<div class="kbd-ref">
+						<span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+						<span><kbd>⏎</kbd> select</span>
+						<span><kbd>⌘⌫</kbd> close tab</span>
+						<span><kbd>esc</kbd> dismiss</span>
+						<span><kbd>⌥⇧P</kbd> pin tab</span>
+						<span><kbd>⌥⇧M</kbd> mute tab</span>
+					</div>
+				</div>
 			</div>
 			<footer>Themes color the command palette, the recents switcher, and the explorer drawer. “Auto” follows your system’s light and dark appearance.</footer>
 		</div>
