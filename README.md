@@ -7,7 +7,7 @@ The most powerful interface for your browser 🔥
 
 With Omni you can use your browser like a pro. Manage tabs, bookmarks, your browser history, perform all sorts of actions and more with a simple command interface.
 
-👉 Get it now [for Chrome](https://chrome.google.com/webstore/detail/omni/mapjgeachilmcbbokkgcbgpbakaaeehi?hl=en&authuser=0) and [for Firefox](https://addons.mozilla.org/en-GB/firefox/addon/omnisearch/)
+👉 Get it now [for Chrome](https://chrome.google.com/webstore/detail/omni/mapjgeachilmcbbokkgcbgpbakaaeehi?hl=en&authuser=0)
 
 <a href="https://www.producthunt.com/posts/omni-3?utm_source=badge-top-post-badge&utm_medium=badge&utm_souce=badge-omni-3" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/top-post-badge.svg?post_id=326242&theme=light&period=daily" alt="Omni - The all-in-one tool to supercharge your productivity | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
 
@@ -25,7 +25,6 @@ Made by [Alyssa X](https://twitter.com/alyssaxuu)
 - [List of commands](#list-of-commands)
 - [Self-hosting Omni](#self-hosting-omni)
 	- [Installing on Chrome](#installing-on-chrome)
-	- [Installing on Firefox](#installing-on-firefox) 
 - [Libraries used](#libraries-used)
 
 ## Features
@@ -36,7 +35,7 @@ Made by [Alyssa X](https://twitter.com/alyssaxuu)
 
 ### Opening Omni
 
-To open Omni, simply press `⌘+Shift+K` on Mac or `Ctrl+Shift+K` on Windows. You can change the shortcut by going to chrome://extensions/shortcuts in Chrome, or by following [these steps](https://support.mozilla.org/en-US/kb/manage-extension-shortcuts-firefox) in Firefox
+To open Omni, simply press `⌘+Shift+K` on Mac or `Ctrl+Shift+K` on Windows. You can change the shortcut by going to chrome://extensions/shortcuts in Chrome.
 
 Alternatively you can click on the extension icon in the toolbar to toggle it.
 
@@ -67,20 +66,13 @@ You can use a variety of commands with Omni to perform actions or filter your re
 Feel free to suggest new commands for Omni by [making an issue](https://github.com/alyssaxuu/omni/issues/new).
 
 ## Self-hosting Omni
-You can run Omni locally without having to install it from the Chrome Store or from Firefox Add-ons.
+You can run Omni locally without having to install it from the Chrome Store.
 
 ### Installing on Chrome
 
 1. Download the code. In the web version of GitHub, you can do that by clicking the green "Code" button, and then "Download ZIP".
 2. Go to chrome://extensions/ in your browser, and [enable developer mode](https://developer.chrome.com/docs/extensions/mv2/faq/#:~:text=You%20can%20start%20by%20turning,a%20packaged%20extension%2C%20and%20more.).
 3. Drag the [src folder](https://github.com/alyssaxuu/omni/tree/master/src) (make sure it's a folder and not a ZIP file, so unzip first), or click on the "Load unpacked" button and locate the folder.
-4. That's it, you will now be able to use Omni locally.
-
-### Installing on Firefox
-
-1. Download the code. In the web version of GitHub, you can do that by clicking the green "Code" button, and then "Download ZIP".
-2. Open the about:debugging page in your browser, click the "This Firefox" option.
-3. Click the "Load Temporary Add-on" button, and select any file inside the [firefox folder](https://github.com/alyssaxuu/omni/tree/master/firefox)
 4. That's it, you will now be able to use Omni locally.
 
 ## Libraries used
