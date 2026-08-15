@@ -56,7 +56,11 @@ grid.addEventListener("click", (e) => {
 });
 
 storage.get(THEME_KEY).then((data) => {
-	select((data && data[THEME_KEY]) || "bright");
+	var stored = (data && data[THEME_KEY]) || "bright";
+	if (stored === "white") {
+		stored = "bright";
+	}
+	select(stored);
 });
 
 const SUGGEST_KEY = "leapLiveSuggestions";

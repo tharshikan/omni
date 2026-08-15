@@ -65,7 +65,6 @@ var LEAP_THEMES = (() => {
 	bright.vars["--shadow"] = "0 10px 32px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.07)";
 	return {
 		"bright": bright,
-		"white": light("Pure White", "#ffffff", "#007aff", "rgba(0, 0, 0, 0.75)"),
 		"paper": light("Paper", "#faf7f0", "#c2410c", "rgba(41, 30, 20, 0.85)"),
 		"sakura": light("Sakura", "#fdf2f6", "#ec4899"),
 		"lavender": light("Lavender", "#f7f5ff", "#7c3aed"),

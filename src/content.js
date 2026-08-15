@@ -50,6 +50,10 @@ $(document).ready(() => {
 	var themeVars = ["--panel", "--panel-solid", "--panel-border", "--hairline", "--edge", "--text", "--text-2", "--text-3", "--select", "--select-hover", "--accent", "--key-bg", "--key-border", "--placeholder", "--overlay", "--match", "--shadow"];
 	function applyTheme(name) {
 		currentTheme = name || "auto";
+		if (currentTheme == "white") {
+			// Pure White was superseded by the opaque Bright White
+			currentTheme = "bright";
+		}
 		var theme = (typeof LEAP_THEMES !== "undefined") ? LEAP_THEMES[currentTheme] : null;
 		var noFrost = !!(theme && theme.frost === false);
 		[$("#omni-extension").get(0), $("#omni-extension-toast").get(0)].forEach((el) => {

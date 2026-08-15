@@ -785,5 +785,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		}
 });
 
+// One-time theme migration: earlier builds could leave "auto" or the old
+// translucent "white" stored, which read grey; move those to Bright White
+// once, keeping any deliberately chosen theme
+chrome.storage.local.get(["leapTheme", "leapThemeMigrated"]).then((data) => {
+	if (data && data.leapThemeMigrated) {
+		return;
+	}
+	const update = { leapThemeMigrated: true };
+	if (!data || !data.leapTheme || data.leapTheme === "auto" || data.leapTheme === "white") {
+		update.leapTheme = "bright";
+	}
+	chrome.storage.local.set(update);
+});
+
 // Get actions
 resetOmni();
