@@ -452,18 +452,38 @@ $(document).ready(() => {
 				})
 				.map((item) => item.action);
 			if (!actions.length) {
-				// Nothing matched — offer a Google search as the fallback result
-				actions = [{
-					title: 'Search Google for "' + value.trim() + '"',
-					desc: "Press Enter to open the results in a new tab",
-					type: "search",
-					action: "google-search",
-					url: "https://www.google.com/search?q=" + encodeURIComponent(value.trim()),
-					emoji: true,
-					emojiChar: "🔍",
-					keycheck: false,
-					currentTab: false
-				}];
+				// Nothing matched — offer web/AI handoffs as fallback results
+				var fallbackQuery = value.trim();
+				var encodedQuery = encodeURIComponent(fallbackQuery);
+				actions = [
+					{
+						title: 'Search Google for "' + fallbackQuery + '"',
+						desc: "Press Enter to open the results in a new tab",
+						favIconUrl: chrome.runtime.getURL("assets/icon-google.svg"),
+						emoji: false,
+						url: "https://www.google.com/search?q=" + encodedQuery
+					},
+					{
+						title: 'Ask Gemini "' + fallbackQuery + '"',
+						desc: "Press Enter to ask Gemini in a new tab",
+						favIconUrl: chrome.runtime.getURL("assets/icon-gemini.svg"),
+						emoji: false,
+						url: "https://gemini.google.com/app?q=" + encodedQuery
+					},
+					{
+						title: 'Ask Claude "' + fallbackQuery + '"',
+						desc: "Press Enter to ask Claude in a new tab",
+						emoji: true,
+						emojiChar: "✳️",
+						url: "https://claude.ai/new?q=" + encodedQuery
+					}
+				].map((item) => {
+					item.type = "search";
+					item.action = "search-handoff";
+					item.keycheck = false;
+					item.currentTab = false;
+					return item;
+				});
 			}
 			populateOmni();
 			return;
@@ -607,7 +627,7 @@ $(document).ready(() => {
 				case "new-tab":
 					window.open("");
 					break;
-				case "google-search":
+				case "search-handoff":
 					window.open(action.url);
 					break;
 				case "email":
