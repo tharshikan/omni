@@ -236,6 +236,8 @@ $(document).ready(() => {
 		const request = currentMode == "recent" ? "get-recents" : "get-actions";
 		chrome.runtime.sendMessage({request:request}, (response) => {
 			isOpen = true;
+			allowHover = false;
+			lastMouse = null;
 			actions = response.actions;
 			recentActions = currentMode == "recent" ? response.actions.slice() : [];
 			recentQuery = "";
@@ -273,12 +275,30 @@ $(document).ready(() => {
 		}
 	}
 
+	// Hover selection is ignored until the mouse really moves after opening —
+	// the browser fires a synthetic mouseover for whatever sits under the
+	// resting cursor when the omni appears, which would steal the selection
+	var allowHover = false;
+	var lastMouse = null;
+	$(document).on("mousemove", (e) => {
+		if (lastMouse && (lastMouse.x != e.clientX || lastMouse.y != e.clientY)) {
+			allowHover = true;
+		}
+		lastMouse = {x: e.clientX, y: e.clientY};
+	});
+
 	// Hover over an action in the omni
 	function hoverItem() {
+		if (!allowHover) {
+			return;
+		}
 		activateElement($(this));
 	}
 
 	function hoverShortcutItem() {
+		if (!allowHover) {
+			return;
+		}
 		activateElement($(this));
 	}
 
