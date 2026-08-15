@@ -95,6 +95,7 @@
 	left: 0px;
 	z-index: 9999999999;
 	pointer-events: all;
+	perspective: 1400px;
 }
 .omni-extension #omni {
 	position: absolute;
@@ -110,18 +111,44 @@
 	backdrop-filter: blur(36px) saturate(1.8);
 	-webkit-backdrop-filter: blur(36px) saturate(1.8);
 	overflow: hidden;
-	animation: omni-pop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+	transform-origin: top center;
+	animation: omni-pop 0.34s cubic-bezier(0.23, 1, 0.32, 1);
 }
 @keyframes omni-pop {
-	from {
-		transform: scale(0.97) translateY(-6px);
+	0% {
+		transform: scale(0.94) translateY(-18px) rotateX(-8deg);
 		opacity: 0;
 	}
-	to {
-		transform: scale(1) translateY(0px);
+	55% {
+		transform: scale(1.004) translateY(1px) rotateX(0.4deg);
+		opacity: 1;
+	}
+	100% {
+		transform: scale(1) translateY(0px) rotateX(0deg);
 		opacity: 1;
 	}
 }
+@keyframes omni-row-in {
+	from {
+		opacity: 0;
+		transform: translateY(9px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0px);
+	}
+}
+.omni-entering #omni-list .omni-item {
+	animation: omni-row-in 0.26s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+.omni-entering #omni-list .omni-item:nth-child(3) { animation-delay: 0.02s; }
+.omni-entering #omni-list .omni-item:nth-child(4) { animation-delay: 0.04s; }
+.omni-entering #omni-list .omni-item:nth-child(5) { animation-delay: 0.06s; }
+.omni-entering #omni-list .omni-item:nth-child(6) { animation-delay: 0.08s; }
+.omni-entering #omni-list .omni-item:nth-child(7) { animation-delay: 0.1s; }
+.omni-entering #omni-list .omni-item:nth-child(8) { animation-delay: 0.12s; }
+.omni-entering #omni-list .omni-item:nth-child(9) { animation-delay: 0.14s; }
+.omni-entering #omni-list .omni-item:nth-child(n+10) { animation-delay: 0.16s; }
 .omni-closing {
 	pointer-events: none;
 	display: none !important;
@@ -158,11 +185,12 @@
 	border-top: 0px;
 	border-bottom: 0px;
 	border-left: 0px;
-	animation: omni-slide-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+	animation: omni-slide-in 0.28s cubic-bezier(0.23, 1, 0.32, 1);
 }
 @keyframes omni-slide-in {
-	from { transform: translateX(-101%); }
-	to { transform: translateX(0px); }
+	0% { transform: translateX(-102%); }
+	65% { transform: translateX(5px); }
+	100% { transform: translateX(0px); }
 }
 .omni-extension.omni-explorer-mode.omni-hiding #omni {
 	opacity: 1;
@@ -295,13 +323,16 @@
 	background: var(--key-bg);
 	color: var(--text);
 	cursor: pointer;
-	transition: background-color 0.12s ease, border-color 0.12s ease, transform 0.12s ease;
+	transition: background-color 0.14s ease, border-color 0.14s ease, transform 0.18s cubic-bezier(0.3, 1.4, 0.4, 1), box-shadow 0.18s ease;
 }
 .omni-extension .omni-shortcut-item:hover {
 	background: var(--select);
+	transform: translateY(-2px);
+	box-shadow: 0 6px 16px rgba(0, 0, 0, 0.14);
 }
 .omni-extension .omni-shortcut-item:active {
-	transform: scale(0.96);
+	transform: translateY(0px) scale(0.94);
+	box-shadow: none;
 }
 .omni-extension .omni-shortcut-item-active {
 	background: var(--select);
@@ -378,6 +409,26 @@
 	width: 100%;
 	margin-left: 0px;
 	margin-right: 0px;
+}
+.omni-extension #omni-selection {
+	position: absolute;
+	left: 0px;
+	right: 0px;
+	top: 0px;
+	height: 56px;
+	border-radius: 11px;
+	background: var(--select);
+	opacity: 0;
+	z-index: -1;
+	transform: translateY(0px);
+	transition: transform 0.24s cubic-bezier(0.3, 1.35, 0.4, 1), height 0.24s cubic-bezier(0.3, 1.35, 0.4, 1), opacity 0.15s ease;
+	pointer-events: none;
+}
+.omni-extension #omni-list.omni-has-pill .omni-item-active {
+	background-color: transparent;
+}
+.omni-extension #omni-list.omni-has-pill .omni-item:hover {
+	background-color: transparent;
 }
 .omni-extension .omni-section {
 	display: block;
@@ -597,7 +648,7 @@
 	-webkit-backdrop-filter: blur(24px) saturate(1.8);
 	visibility: hidden;
 	opacity: 0;
-	transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+	transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 	z-index: 99999999;
 }
 #omni-extension-toast img {
@@ -613,4 +664,15 @@
 	bottom: 24px !important;
 	opacity: 1 !important;
 	visibility: visible !important;
+}
+
+/* ---------- Reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+	.omni-extension *,
+	.omni-extension #omni,
+	#omni-extension-toast {
+		animation: none !important;
+		transition: none !important;
+	}
 }

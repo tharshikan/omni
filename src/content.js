@@ -94,9 +94,33 @@ $(document).ready(() => {
 		clearActiveState();
 		if (element.hasClass("omni-item")) {
 			element.addClass("omni-item-active");
+			positionSelectionPill(element);
 			element[0].scrollIntoView({block:"nearest", inline:"nearest"});
 		} else if (element.hasClass("omni-shortcut-item")) {
 			element.addClass("omni-shortcut-item-active");
+		}
+	}
+
+	// The selection is a pill that glides between rows rather than a
+	// background that snaps. It is re-created on every populate; its first
+	// placement is instant, every move after that is animated.
+	function positionSelectionPill(element) {
+		var pill = document.getElementById("omni-selection");
+		if (!pill || !element.hasClass("omni-item")) {
+			return;
+		}
+		var el = element.get(0);
+		var firstPlacement = pill.dataset.placed !== "true";
+		if (firstPlacement) {
+			pill.style.transition = "none";
+		}
+		pill.style.height = el.offsetHeight + "px";
+		pill.style.transform = "translateY(" + el.offsetTop + "px)";
+		pill.style.opacity = "1";
+		if (firstPlacement) {
+			pill.getBoundingClientRect();
+			pill.style.transition = "";
+			pill.dataset.placed = "true";
 		}
 	}
 
@@ -235,6 +259,7 @@ $(document).ready(() => {
 	// Add actions to the omni
 	function populateOmni() {
 		$("#omni-extension #omni-list").html("");
+		$("#omni-extension #omni-list").addClass("omni-has-pill").append("<div id='omni-selection'></div>");
 		var lastSection = null;
 		actions.forEach((action, index) => {
 			if (action.section && action.section !== lastSection) {
@@ -267,6 +292,8 @@ $(document).ready(() => {
 	// Add filtered actions to the omni
 	function populateOmniFilter(actions) {
 		isFiltered = true;
+		// The virtualized list manages its own DOM; fall back to class-based selection
+		$("#omni-extension #omni-list").removeClass("omni-has-pill");
 		$("#omni-extension #omni-list").html("");
 		const renderRow = (index) => {
 			const action = actions[index]
@@ -297,6 +324,7 @@ $(document).ready(() => {
 	}
 
 	var closeTimer = null;
+	var enterTimer = null;
 
 	// Open the omni
 	function openOmni(mode) {
@@ -317,6 +345,12 @@ $(document).ready(() => {
 			// Unhide before populating so setDefaultActiveItem can see the items (:visible)
 			window.clearTimeout(closeTimer);
 			$("#omni-extension").removeClass("omni-closing omni-hiding");
+			// Stagger the first rows in, only for this opening
+			$("#omni-extension").addClass("omni-entering");
+			window.clearTimeout(enterTimer);
+			enterTimer = window.setTimeout(() => {
+				$("#omni-extension").removeClass("omni-entering");
+			}, 450);
 			populateOmni();
 			$("html, body").stop();
 			// Grab focus right away so the first keystrokes land in the omni,
@@ -573,6 +607,8 @@ $(document).ready(() => {
 			return;
 		}
 		var value = $(this).val().toLowerCase();
+		// Typing ends the entrance stagger so re-renders don't replay it
+		$("#omni-extension").removeClass("omni-entering");
 		if (isRecentLike()) {
 			recentQuery = value.trim();
 			updateRecentFilterVisibility();
