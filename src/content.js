@@ -44,6 +44,25 @@ $(document).ready(() => {
 		liveSuggestions = !(data && data.leapLiveSuggestions === false);
 	});
 
+	// User-chosen interface scale, applied as zoom so everything scales together
+	var uiScale = 1;
+	function applyScale(scale) {
+		uiScale = Math.min(1.3, Math.max(0.9, parseFloat(scale) || 1));
+		[$("#omni-wrap").get(0), $("#omni-extension-toast").get(0)].forEach((el) => {
+			if (el) {
+				el.style.zoom = uiScale;
+			}
+		});
+		var root = $("#omni-extension").get(0);
+		if (root) {
+			// Lets vh-based sizes compensate so the zoomed panel still fits
+			root.style.setProperty("--leap-zoom", uiScale);
+		}
+	}
+	chrome.storage.local.get("leapUiScale").then((data) => {
+		applyScale(data && data.leapUiScale);
+	});
+
 	// Apply the chosen theme by writing its variables onto the UI roots;
 	// "auto" clears them so the system palette in the stylesheet wins
 	var currentTheme = "bright";
@@ -83,6 +102,9 @@ $(document).ready(() => {
 			}
 			if (changes.leapLiveSuggestions) {
 				liveSuggestions = changes.leapLiveSuggestions.newValue !== false;
+			}
+			if (changes.leapUiScale) {
+				applyScale(changes.leapUiScale.newValue);
 			}
 		});
 	}
@@ -263,6 +285,7 @@ $(document).ready(() => {
 			$("#omni-close-key").text("Ctrl⌫");
 		}
 		applyTheme(currentTheme);
+		applyScale(uiScale);
 
 		// Get checkmark image for toast
 		$("#omni-extension-toast img").attr("src", chrome.runtime.getURL("assets/check.svg"));

@@ -71,3 +71,16 @@ storage.get(SUGGEST_KEY).then((data) => {
 suggestToggle.addEventListener("change", () => {
 	storage.set({ [SUGGEST_KEY]: suggestToggle.checked });
 });
+
+const SCALE_KEY = "leapUiScale";
+const scaleSlider = document.getElementById("ui-scale");
+const scaleValue = document.getElementById("scale-value");
+storage.get(SCALE_KEY).then((data) => {
+	const percent = Math.round(((data && data[SCALE_KEY]) || 1) * 100);
+	scaleSlider.value = percent;
+	scaleValue.textContent = percent + "%";
+});
+scaleSlider.addEventListener("input", () => {
+	scaleValue.textContent = scaleSlider.value + "%";
+	storage.set({ [SCALE_KEY]: scaleSlider.value / 100 });
+});

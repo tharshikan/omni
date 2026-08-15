@@ -108,6 +108,17 @@
 			}
 			.switch input:checked + .knob { background: var(--accent); }
 			.switch input:checked + .knob::after { transform: translateX(18px); }
+			#ui-scale { width: 220px; flex: none; accent-color: var(--accent); cursor: pointer; }
+			.scale-badge {
+				display: inline-block;
+				margin-left: 8px;
+				padding: 1px 8px;
+				border-radius: 999px;
+				background: color-mix(in srgb, var(--accent) 14%, transparent);
+				color: var(--accent);
+				font-size: 12px;
+				font-weight: 600;
+			}
 		</style>
 	</head>
 	<body>
@@ -119,6 +130,14 @@
 			<p class="subtitle">Changes apply instantly, everywhere Leap is open.</p>
 			<h2>Theme</h2>
 			<div class="grid" id="theme-grid"></div>
+			<h2 class="section-gap">Size</h2>
+			<div class="setting">
+				<div class="setting-text">
+					<div class="setting-name">Interface scale <span id="scale-value" class="scale-badge">100%</span></div>
+					<div class="setting-desc">Make the palette, switcher, and drawer bigger or smaller. Applies instantly.</div>
+				</div>
+				<input type="range" id="ui-scale" min="90" max="130" step="5" value="100">
+			</div>
 			<h2 class="section-gap">Search</h2>
 			<div class="setting">
 				<div class="setting-text">

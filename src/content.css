@@ -90,7 +90,7 @@
 	position: fixed;
 	width: 680px;
 	margin: auto;
-	top: 96px;
+	top: calc(96px / var(--leap-zoom, 1));
 	right: 0px;
 	left: 0px;
 	z-index: 9999999999;
@@ -175,7 +175,7 @@
 	left: 0px;
 	right: auto;
 	margin: 0px;
-	height: 100vh;
+	height: calc(100vh / var(--leap-zoom, 1));
 }
 .omni-extension.omni-explorer-mode #omni {
 	height: 100%;
@@ -395,7 +395,7 @@
 	/* Grow with content and screen size, but always clear the viewport
 	   (96px top offset + search row + footer + bottom breathing room),
 	   and cap the growth on very tall screens */
-	max-height: clamp(200px, calc(100vh - 280px), 680px);
+	max-height: clamp(200px, calc(100vh / var(--leap-zoom, 1) - 280px), 680px);
 	position: relative;
 	padding-top: 8px;
 	padding-bottom: 8px;
