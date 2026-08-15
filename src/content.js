@@ -41,7 +41,7 @@ $(document).ready(() => {
 	// Apply the chosen theme by writing its variables onto the UI roots;
 	// "auto" clears them so the system palette in the stylesheet wins
 	var currentTheme = "bright";
-	var themeVars = ["--panel", "--panel-solid", "--hairline", "--edge", "--text", "--text-2", "--text-3", "--select", "--select-hover", "--accent", "--key-bg", "--key-border", "--placeholder", "--overlay", "--match", "--shadow"];
+	var themeVars = ["--panel", "--panel-solid", "--panel-border", "--hairline", "--edge", "--text", "--text-2", "--text-3", "--select", "--select-hover", "--accent", "--key-bg", "--key-border", "--placeholder", "--overlay", "--match", "--shadow"];
 	function applyTheme(name) {
 		currentTheme = name || "auto";
 		var theme = (typeof LEAP_THEMES !== "undefined") ? LEAP_THEMES[currentTheme] : null;

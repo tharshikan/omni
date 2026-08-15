@@ -101,7 +101,7 @@
 	position: absolute;
 	width: 100%;
 	background: var(--panel);
-	border: 1px solid var(--hairline);
+	border: 1px solid var(--panel-border, var(--hairline));
 	border-radius: 16px;
 	top: 0px;
 	left: 0px;
@@ -639,7 +639,7 @@
 	margin: auto;
 	background: var(--panel);
 	border-radius: 999px;
-	border: 1px solid var(--hairline);
+	border: 1px solid var(--panel-border, var(--hairline));
 	box-shadow: var(--shadow);
 	height: 40px;
 	padding-left: 16px;

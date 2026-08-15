@@ -60,7 +60,9 @@ var LEAP_THEMES = (() => {
 	bright.vars["--key-border"] = "rgba(0, 0, 0, 0.05)";
 	bright.vars["--select-hover"] = "rgba(0, 0, 0, 0.04)";
 	bright.vars["--overlay"] = "rgba(0, 0, 0, 0.15)";
-	bright.vars["--shadow"] = "0 0 0 0.5px rgba(0, 0, 0, 0.06), 0 24px 60px rgba(0, 0, 0, 0.2), 0 4px 14px rgba(0, 0, 0, 0.08)";
+	// Chrome-omnibox edges: no border ring, just a soft diffused shadow
+	bright.vars["--panel-border"] = "transparent";
+	bright.vars["--shadow"] = "0 10px 32px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.07)";
 	return {
 		"bright": bright,
 		"white": light("Pure White", "#ffffff", "#007aff", "rgba(0, 0, 0, 0.75)"),
