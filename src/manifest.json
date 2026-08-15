@@ -42,13 +42,17 @@
 	"background": {
 		"service_worker": "background.js"
 	},
+	"options_ui": {
+		"page": "options.html",
+		"open_in_tab": true
+	},
 	"content_scripts": [
 		{
 			"matches": [
 				"<all_urls>"
 			],
 			"run_at": "document_end",
-			"js": ["focus.js", "jquery.js", "content.js", "virtualized-list.min.js"],
+			"js": ["focus.js", "jquery.js", "themes.js", "content.js", "virtualized-list.min.js"],
 			"css": ["content.css"]
 		}
 	],

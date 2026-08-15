@@ -6,7 +6,7 @@ Leap is a heavily reworked fork of [Omni](https://github.com/alyssaxuu/omni) by 
 
 ## Features
 
-🗄 Switch, open, close, and search your tabs<br> 📚 Browse and manage your bookmarks<br> 🔍 Search your browsing history<br> ⚡️ 50+ actions to improve your productivity<br> 🔮 Special commands to filter and perform more actions<br> ⌨️ Shortcuts for actions such as muting, pinning, bookmarking...<br> 🌙 Dark mode<br> ...and much more - all for free & no sign in needed!
+🗄 Switch, open, close, and search your tabs<br> 📚 Browse and manage your bookmarks<br> 🔍 Search your browsing history<br> ⚡️ 50+ actions to improve your productivity<br> 🔮 Special commands to filter and perform more actions<br> ⌨️ Shortcuts for actions such as muting, pinning, bookmarking...<br> 🎨 Ten themes plus automatic light/dark — pick one in Settings or via the "Change theme" action<br> ...and much more - all for free & no sign in needed!
 
 ## The three surfaces
 

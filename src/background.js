@@ -161,6 +161,7 @@ const clearActions = () => {
 			{title:"Fullscreen", desc:"Make the page fullscreen", type:"action", action:"fullscreen", emoji:true, emojiChar:"🖥", keycheck:true, keys:['⌘', 'Ctrl', 'F']},
 			muteaction,
 			{title:"Reload", desc:"Reload the page", type:"action", action:"reload", emoji:true, emojiChar:"♻️", keycheck:true, keys:['⌘','⇧', 'R']},
+			{title:"Change theme", desc:"Pick a look for Leap", type:"action", action:"open-options", emoji:true, emojiChar:"🎨", keycheck:false},
 			{title:"Help", desc:"Get help with Leap on GitHub", type:"action", action:"url", url:"https://github.com/tharshikan/omni", emoji:true, emojiChar:"🤔", keycheck:false},
 			{title:"Compose email", desc:"Compose a new email", type:"action", action:"email", emoji:true, emojiChar:"✉️", keycheck:true, keys:['⌥','⇧', 'C']},
 			{title:"Print page", desc:"Print the current page", type:"action", action:"print", emoji:true, emojiChar:"🖨️", keycheck:true, keys:['⌘', 'P']},
@@ -661,6 +662,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 			if (sender.tab && sender.tab.id) {
 				chrome.tabs.remove(sender.tab.id);
 			}
+			break;
+		case "open-options":
+			chrome.runtime.openOptionsPage();
 			break;
 		case "close-omni":
 			getCurrentTab().then((response) => {

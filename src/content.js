@@ -38,6 +38,37 @@ $(document).ready(() => {
 		paletteExplorerFlow = !!(data && data.leapPaletteExplorerFlow);
 	});
 
+	// Apply the chosen theme by writing its variables onto the UI roots;
+	// "auto" clears them so the system palette in the stylesheet wins
+	var currentTheme = "auto";
+	var themeVars = ["--panel", "--panel-solid", "--hairline", "--edge", "--text", "--text-2", "--text-3", "--select", "--select-hover", "--accent", "--key-bg", "--key-border", "--placeholder", "--overlay", "--match", "--shadow"];
+	function applyTheme(name) {
+		currentTheme = name || "auto";
+		var theme = (typeof LEAP_THEMES !== "undefined") ? LEAP_THEMES[currentTheme] : null;
+		[$("#omni-extension").get(0), $("#omni-extension-toast").get(0)].forEach((el) => {
+			if (!el) {
+				return;
+			}
+			themeVars.forEach((varName) => {
+				if (theme && theme.vars[varName]) {
+					el.style.setProperty(varName, theme.vars[varName]);
+				} else {
+					el.style.removeProperty(varName);
+				}
+			});
+		});
+	}
+	chrome.storage.local.get("leapTheme").then((data) => {
+		applyTheme(data && data.leapTheme);
+	});
+	if (chrome.storage.onChanged) {
+		chrome.storage.onChanged.addListener((changes, area) => {
+			if (area == "local" && changes.leapTheme) {
+				applyTheme(changes.leapTheme.newValue);
+			}
+		});
+	}
+
 	function updateRecentFilterVisibility() {
 		var hasQuery = $("#omni-extension input").val().length > 0;
 		$("#omni-extension").toggleClass("omni-recent-mode", currentMode == "recent");
@@ -163,6 +194,7 @@ $(document).ready(() => {
 		if (navigator.platform.toUpperCase().indexOf("MAC") < 0) {
 			$("#omni-close-key").text("Ctrl⌫");
 		}
+		applyTheme(currentTheme);
 
 		// Get checkmark image for toast
 		$("#omni-extension-toast img").attr("src", chrome.runtime.getURL("assets/check.svg"));
