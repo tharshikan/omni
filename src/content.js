@@ -23,15 +23,21 @@ $(document).ready(() => {
 		{title:"History", request:"history", icon:"assets/icon-history.svg"}
 	];
 
+	// The explorer drawer behaves like recents, just rendered as a side panel
+	function isRecentLike() {
+		return currentMode == "recent" || currentMode == "explorer";
+	}
+
 	function updateRecentFilterVisibility() {
 		var hasQuery = $("#omni-extension input").val().length > 0;
 		$("#omni-extension").toggleClass("omni-recent-mode", currentMode == "recent");
-		$("#omni-extension").toggleClass("omni-recent-filtering", currentMode == "recent" && hasQuery);
+		$("#omni-extension").toggleClass("omni-explorer-mode", currentMode == "explorer");
+		$("#omni-extension").toggleClass("omni-recent-filtering", isRecentLike() && hasQuery);
 		$("#omni-recent-query-text").text(recentQuery);
 	}
 
 	function updateInputPlaceholder() {
-		var placeholder = currentMode == "recent" ? "Search recent tabs and actions" : "Type a command or search";
+		var placeholder = isRecentLike() ? "Search recent tabs and actions" : "Type a command or search";
 		$("#omni-extension input").attr("placeholder", placeholder);
 	}
 
@@ -59,7 +65,7 @@ $(document).ready(() => {
 		if (!visibleItems.length) {
 			return;
 		}
-		if (currentMode == "recent") {
+		if (isRecentLike()) {
 			var nonCurrentItem = visibleItems.filter(function() {
 				return $(this).attr("data-current-tab") != "true";
 			}).first();
@@ -106,7 +112,7 @@ $(document).ready(() => {
 
 	function highlightRecentMatch(value, query) {
 		var safeValue = escapeHtml(value || "");
-		if (currentMode != "recent" || !query) {
+		if (!isRecentLike() || !query) {
 			return safeValue;
 		}
 		var lowerValue = (value || "").toLowerCase();
@@ -156,7 +162,7 @@ $(document).ready(() => {
 		if (action.action == "search" || action.action == "goto") {
 			skip = "style='display:none'";
 		}
-		var actionTitle = currentMode == "recent" ? highlightRecentMatch(action.title, recentQuery) : escapeHtml(action.title);
+		var actionTitle = isRecentLike() ? highlightRecentMatch(action.title, recentQuery) : escapeHtml(action.title);
 		var actionDesc = escapeHtml(action.desc);
 		$("#omni-extension #omni-list").append("<div class='omni-item' "+skip+" data-index='"+index+"' data-type='"+action.type+"' data-current-tab='"+(action.currentTab ? "true" : "false")+"'>"+img+"<div class='omni-item-details'><div class='omni-item-name'>"+actionTitle+"</div><div class='omni-item-desc'>"+actionDesc+"</div></div>"+keys+"<div class='omni-select'>Select <span class='omni-shortcut'>⏎</span></div></div>");
 		if (!action.emoji) {
@@ -229,31 +235,40 @@ $(document).ready(() => {
 		});
 	}
 
+	var closeTimer = null;
+
 	// Open the omni
 	function openOmni(mode) {
 		currentMode = mode || "default";
 		updateInputPlaceholder();
-		const request = currentMode == "recent" ? "get-recents" : "get-actions";
+		const request = isRecentLike() ? "get-recents" : "get-actions";
 		chrome.runtime.sendMessage({request:request}, (response) => {
 			isOpen = true;
 			allowHover = false;
 			lastMouse = null;
 			actions = response.actions;
-			recentActions = currentMode == "recent" ? response.actions.slice() : [];
+			recentActions = isRecentLike() ? response.actions.slice() : [];
 			recentQuery = "";
 			isFiltered = false;
 			$("#omni-extension input").val("");
 			updateRecentFilterVisibility();
 			// Unhide before populating so setDefaultActiveItem can see the items (:visible)
-			$("#omni-extension").removeClass("omni-closing");
+			window.clearTimeout(closeTimer);
+			$("#omni-extension").removeClass("omni-closing omni-hiding");
 			populateOmni();
 			$("html, body").stop();
 			// Grab focus right away so the first keystrokes land in the omni,
-			// then again shortly after for pages that steal focus back
-			$("#omni-extension input").focus();
-			focusLock.on($("#omni-extension input").get(0));
+			// then again shortly after for pages that steal focus back.
+			// Native focus() — the jQuery trigger can silently fail.
+			var inputEl = $("#omni-extension input").get(0);
+			if (inputEl) {
+				inputEl.focus();
+				focusLock.on(inputEl);
+			}
 			window.setTimeout(() => {
-				$("#omni-extension input").focus();
+				if (isOpen && inputEl) {
+					inputEl.focus();
+				}
 			}, 100);
 		});
 	}
@@ -264,14 +279,27 @@ $(document).ready(() => {
 			chrome.runtime.sendMessage({request:"restore-new-tab"});
 		} else {
 			isOpen = false;
+			var closingMode = currentMode;
 			currentMode = "default";
 			recentActions = [];
 			recentQuery = "";
-			focusLock.off($("#omni-extension input").get(0));
+			var closingInput = $("#omni-extension input").get(0);
+			if (closingInput) {
+				focusLock.off(closingInput);
+				closingInput.blur();
+			}
 			$("#omni-extension input").val("");
-			$("#omni-extension input").blur();
-			updateRecentFilterVisibility();
-			$("#omni-extension").addClass("omni-closing");
+			// Play the exit animation before hiding; keep the mode class so
+			// the drawer slides out instead of fading like the palette
+			$("#omni-extension").toggleClass("omni-explorer-mode", closingMode == "explorer");
+			$("#omni-extension").toggleClass("omni-recent-mode", closingMode == "recent");
+			$("#omni-extension").removeClass("omni-recent-filtering");
+			$("#omni-extension").addClass("omni-hiding");
+			window.clearTimeout(closeTimer);
+			closeTimer = window.setTimeout(() => {
+				$("#omni-extension").removeClass("omni-hiding");
+				$("#omni-extension").addClass("omni-closing");
+			}, 160);
 		}
 	}
 
@@ -376,7 +404,7 @@ $(document).ready(() => {
 			return;
 		}
 		var value = $(this).val().toLowerCase();
-		if (currentMode == "recent") {
+		if (isRecentLike()) {
 			recentQuery = value.trim();
 			updateRecentFilterVisibility();
 			if (value.trim() == "") {
@@ -767,6 +795,12 @@ $(document).ready(() => {
 				closeOmni();
 			} else {
 				openOmni("recent");
+			}
+		} else if (message.request == "open-explorer") {
+			if (isOpen && currentMode == "explorer") {
+				closeOmni();
+			} else {
+				openOmni("explorer");
 			}
 		} else if (message.request == "close-omni") {
 			closeOmni();

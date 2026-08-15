@@ -30,6 +30,13 @@
 				"mac": "Command+Shift+A"
 			},
 			"description": "Open recent tabs and actions"
+		},
+		"open-explorer": {
+			"suggested_key": {
+				"default": "Ctrl+Shift+E",
+				"mac": "Command+Shift+E"
+			},
+			"description": "Toggle the tab explorer drawer"
 		}
 	},
 	"background": {

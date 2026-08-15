@@ -283,11 +283,11 @@ chrome.action.onClicked.addListener((tab) => {
 
 // Listen for the open omni shortcut
 chrome.commands.onCommand.addListener((command) => {
-	if (command !== "open-omni" && command !== "open-recents") {
+	if (command !== "open-omni" && command !== "open-recents" && command !== "open-explorer") {
 		return;
 	}
-	const request = command === "open-recents" ? "open-recents" : "open-omni";
-	launchMode = command === "open-recents" ? "recent" : "default";
+	const request = command;
+	launchMode = command === "open-recents" ? "recent" : command === "open-explorer" ? "explorer" : "default";
 	getCurrentTab().then((response) => {
 		if (canOpenOmniInTab(response)) {
 			chrome.tabs.sendMessage(response.id, {request: request});
