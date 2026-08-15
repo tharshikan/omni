@@ -17,7 +17,7 @@
 		--key-border: rgba(255, 255, 255, 0.08);
 		--placeholder: rgba(255, 255, 255, 0.28);
 		--overlay: rgba(0, 0, 0, 0.3);
-		--match: rgba(10, 132, 255, 0.32);
+		--match: rgba(255, 214, 10, 0.32);
 		--shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.6), 0 24px 64px rgba(0, 0, 0, 0.55), 0 4px 16px rgba(0, 0, 0, 0.35);
 	}
 }
@@ -38,7 +38,7 @@
 		--key-border: rgba(0, 0, 0, 0.06);
 		--placeholder: rgba(0, 0, 0, 0.26);
 		--overlay: rgba(0, 0, 0, 0.14);
-		--match: rgba(0, 122, 255, 0.18);
+		--match: rgba(255, 214, 10, 0.5);
 		--shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 24px 64px rgba(0, 0, 0, 0.22), 0 4px 16px rgba(0, 0, 0, 0.1);
 	}
 }
@@ -151,6 +151,14 @@
 	border-bottom: 1px solid var(--hairline);
 	background: transparent;
 }
+.omni-extension #omni-search-icon {
+	display: block;
+	flex: none;
+	width: 18px;
+	height: 18px;
+	margin-right: 12px;
+	color: var(--text-3);
+}
 .omni-extension input {
 	flex: 1;
 	background: transparent;
@@ -177,33 +185,8 @@
 /* ---------- Recent mode ---------- */
 
 .omni-extension #omni-recent-query {
-	display: none;
-	position: absolute;
-	top: 12px;
-	right: 14px;
-	align-items: center;
-	gap: 7px;
-	padding: 7px 12px;
-	border-radius: 999px;
-	background: var(--panel);
-	border: 1px solid var(--hairline);
-	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-	color: var(--text-2);
-	font-size: 13px;
-	font-weight: 500;
-	line-height: 1;
-	z-index: 3;
-	backdrop-filter: blur(12px);
-	-webkit-backdrop-filter: blur(12px);
-}
-.omni-extension #omni-recent-query-icon {
-	display: inline;
-	font-size: 13px;
-	color: var(--text-2);
-}
-.omni-extension #omni-recent-query-text {
-	display: inline;
-	color: var(--text);
+	/* Replaced by the always-visible compact search field in recent mode */
+	display: none !important;
 }
 .omni-extension #omni-recent-layout {
 	display: block;
@@ -254,23 +237,18 @@
 	margin: 14px auto;
 }
 .omni-extension.omni-recent-mode #omni-search {
-	/* Collapse instead of display:none — the input must stay focusable to capture typing */
-	height: 0px;
-	padding: 0px;
-	border-bottom: 0px;
-	overflow: hidden;
+	/* IntelliJ-style compact search row at the top left */
+	height: 42px;
+	padding: 0px 16px;
+}
+.omni-extension.omni-recent-mode #omni-search-icon {
+	width: 14px;
+	height: 14px;
+	margin-right: 9px;
 }
 .omni-extension.omni-recent-mode input {
-	position: fixed;
-	top: -1000px;
-	left: -1000px;
-	width: 1px;
-	height: 1px;
-	opacity: 0;
-	pointer-events: none;
-}
-.omni-extension.omni-recent-filtering #omni-recent-query {
-	display: flex;
+	font-size: 13.5px;
+	font-weight: 500;
 }
 
 /* ---------- List ---------- */
@@ -292,9 +270,6 @@
 	width: 100%;
 	margin-left: 0px;
 	margin-right: 0px;
-}
-.omni-extension.omni-recent-filtering #omni-list {
-	padding-top: 52px;
 }
 .omni-extension .omni-item {
 	display: flex;
