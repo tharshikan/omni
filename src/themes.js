@@ -50,12 +50,17 @@ var LEAP_THEMES = (() => {
 			"--shadow": "0 0 0 0.5px rgba(0, 0, 0, 0.6), 0 24px 64px rgba(0, 0, 0, 0.55), 0 4px 16px rgba(0, 0, 0, 0.35)"
 		}
 	});
-	// Fully opaque white — no frost, so the page never tints it grey
+	// Fully opaque white with the frost disabled — nothing can tint it grey
 	const bright = light("Bright White", "#ffffff", "#007aff", "rgba(0, 0, 0, 0.78)");
+	bright.frost = false;
 	bright.vars["--panel"] = "#ffffff";
-	bright.vars["--hairline"] = "rgba(0, 0, 0, 0.07)";
-	bright.vars["--key-bg"] = "rgba(0, 0, 0, 0.04)";
-	bright.vars["--key-border"] = "rgba(0, 0, 0, 0.06)";
+	bright.vars["--edge"] = "#ffffff";
+	bright.vars["--hairline"] = "rgba(0, 0, 0, 0.055)";
+	bright.vars["--key-bg"] = "rgba(0, 0, 0, 0.035)";
+	bright.vars["--key-border"] = "rgba(0, 0, 0, 0.05)";
+	bright.vars["--select-hover"] = "rgba(0, 0, 0, 0.04)";
+	bright.vars["--overlay"] = "rgba(0, 0, 0, 0.15)";
+	bright.vars["--shadow"] = "0 0 0 0.5px rgba(0, 0, 0, 0.06), 0 24px 60px rgba(0, 0, 0, 0.2), 0 4px 14px rgba(0, 0, 0, 0.08)";
 	return {
 		"bright": bright,
 		"white": light("Pure White", "#ffffff", "#007aff", "rgba(0, 0, 0, 0.75)"),

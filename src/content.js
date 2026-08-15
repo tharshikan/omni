@@ -45,10 +45,12 @@ $(document).ready(() => {
 	function applyTheme(name) {
 		currentTheme = name || "auto";
 		var theme = (typeof LEAP_THEMES !== "undefined") ? LEAP_THEMES[currentTheme] : null;
+		var noFrost = !!(theme && theme.frost === false);
 		[$("#omni-extension").get(0), $("#omni-extension-toast").get(0)].forEach((el) => {
 			if (!el) {
 				return;
 			}
+			el.classList.toggle("omni-no-frost", noFrost);
 			themeVars.forEach((varName) => {
 				if (theme && theme.vars[varName]) {
 					el.style.setProperty(varName, theme.vars[varName]);
