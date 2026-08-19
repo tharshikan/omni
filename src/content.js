@@ -1254,7 +1254,13 @@ $(document).ready(() => {
 			}
 		} else if (message.request == "open-recents") {
 			if (isOpen && currentMode == "recent") {
-				closeOmni();
+				// IntelliJ Cmd+E: the second press commits the selection, so
+				// a double-tap bounces straight to the previous tab
+				if ($(".omni-item-active").length) {
+					handleAction({});
+				} else {
+					closeOmni();
+				}
 			} else {
 				openOmni("recent");
 			}
