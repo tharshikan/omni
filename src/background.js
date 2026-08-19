@@ -31,57 +31,23 @@ const canTrackTab = (tab) => {
 	return tab && tab.id && tab.url && !tab.url.includes("chrome://") && !tab.url.includes("chrome-extension://") && !tab.url.includes("chrome.google.com");
 }
 
-// The recents list lives in memory and is persisted on a short debounce.
-// Reading, modifying and writing storage per switch lost updates: switching
-// tabs quickly ran several of those concurrently and each wrote back a
-// snapshot taken before the others had landed.
-let recentItemsCache = null;
-let recentItemsLoad = null;
-let recentSaveTimer = null;
-let recentSaveSince = 0;
-
 const getRecentItems = async () => {
-	if (recentItemsCache) {
-		return recentItemsCache;
-	}
-	if (!recentItemsLoad) {
-		recentItemsLoad = chrome.storage.local.get(RECENT_ITEMS_KEY).then((data) => {
-			recentItemsCache = (data && data[RECENT_ITEMS_KEY]) || [];
-			return recentItemsCache;
-		});
-	}
-	return recentItemsLoad;
+	const data = await chrome.storage.local.get(RECENT_ITEMS_KEY);
+	return data[RECENT_ITEMS_KEY] || [];
 }
 
-const writeRecentItems = () => {
-	recentSaveTimer = null;
-	recentSaveSince = 0;
-	if (recentItemsCache) {
-		chrome.storage.local.set({[RECENT_ITEMS_KEY]: recentItemsCache});
-	}
-}
-
-const saveRecentItems = () => {
-	const now = Date.now();
-	if (!recentSaveSince) {
-		recentSaveSince = now;
-	}
-	clearTimeout(recentSaveTimer);
-	// Coalesce bursts of switching, but never hold a write back for long
-	recentSaveTimer = setTimeout(writeRecentItems, now - recentSaveSince > 1500 ? 0 : 400);
+const saveRecentItems = async (items) => {
+	await chrome.storage.local.set({[RECENT_ITEMS_KEY]: items.slice(0, RECENT_ITEMS_LIMIT)});
 }
 
 const pushRecentItem = async (item) => {
 	if (!item || !item.key) {
 		return;
 	}
-	await getRecentItems();
-	// Rewriting the in-memory list happens in one synchronous step, so
-	// concurrent switches queue behind each other instead of colliding
-	recentItemsCache = [{...item, timestamp: Date.now()}]
-		.concat(recentItemsCache.filter((recentItem) => recentItem.key !== item.key))
-		.slice(0, RECENT_ITEMS_LIMIT);
-	saveRecentItems();
+	const recentItems = await getRecentItems();
+	const filteredItems = recentItems.filter((recentItem) => recentItem.key !== item.key);
+	filteredItems.unshift({...item, timestamp: Date.now()});
+	await saveRecentItems(filteredItems);
 }
 
 const trackRecentTab = async (tab) => {
@@ -284,9 +250,9 @@ const getSuggestions = async (query) => {
 }
 
 // Clear actions and append default ones
-const buildBaseActions = (response) => {
-	{
-		let actions = [];
+const clearActions = () => {
+	getCurrentTab().then((response) => {
+		actions = [];
 		const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 		let muteaction = {title:"Mute tab", desc:"Mute the current tab", type:"action", action:"mute", emoji:true, emojiChar:"🔇", keycheck:true, keys:['⌥','⇧', 'M']};
 		let pinaction = {title:"Pin tab", desc:"Pin the current tab", type:"action", action:"pin", emoji:true, emojiChar:"📌", keycheck:true, keys:['⌥','⇧', 'P']};
@@ -398,8 +364,7 @@ const buildBaseActions = (response) => {
 				};
 			};
 		}
-		return actions;
-	}
+	});
 }
 
 // Open on install
@@ -498,78 +463,32 @@ function restoreNewTab() {
 	})
 }
 
-// One deterministic build. The old version kicked off three async builders
-// and concatenated synchronously, so whichever resolved last decided the
-// contents — tabs or bookmarks could be wiped and the search rows always
-// were. Nothing is built until something actually asks for the list.
-let actionsDirty = true;
-let actionsBuild = null;
-
-const buildActions = async () => {
-	const [currentTab, tabs, bookmarks] = await Promise.all([
-		getCurrentTab(),
-		chrome.tabs.query({}),
-		chrome.bookmarks.getRecent(100)
-	]);
-	const tabActions = tabs.map((tab) => {
-		tab.desc = prettyHost(tab.url);
-		tab.keycheck = false;
-		tab.action = "switch-tab";
-		tab.type = "tab";
-		if (tab.url) {
-			tab.favIconUrl = faviconForUrl(tab.url);
-		}
-		return tab;
-	});
-	const bookmarkActions = [];
-	const collectBookmarks = (nodes) => {
-		for (const bookmark of nodes) {
-			if (bookmark.url) {
-				bookmarkActions.push({title:bookmark.title, desc:"Bookmark", id:bookmark.id, url:bookmark.url, type:"bookmark", action:"bookmark", emoji:true, emojiChar:"⭐️", keycheck:false});
-			}
-			if (bookmark.children) {
-				collectBookmarks(bookmark.children);
-			}
-		}
-	};
-	collectBookmarks(bookmarks);
-	const baseActions = buildBaseActions(currentTab || {mutedInfo: {}, pinned: false});
-	actions = [
+const resetOmni = () => {
+	clearActions();
+	getTabs();
+	getBookmarks();
+	var search = [
 		{title:"Search", desc:"Search for a query", type:"action", action:"search", emoji:true, emojiChar:"🔍", keycheck:false},
 		{title:"Search", desc:"Go to website", type:"action", action:"goto", emoji:true, emojiChar:"🔍", keycheck:false}
-	].concat(tabActions, baseActions, bookmarkActions);
-	actionsDirty = false;
-	return actions;
+	];
+	actions = search.concat(actions);
 }
 
-// Rebuilds happen on demand, so a burst of tab churn costs a flag flip
-// rather than a tabs query and a bookmark scan every couple of hundred ms
-const invalidateActions = () => {
-	actionsDirty = true;
-}
-
-const ensureActions = () => {
-	if (!actionsDirty && actions.length) {
-		return Promise.resolve(actions);
-	}
-	if (!actionsBuild) {
-		actionsBuild = buildActions().finally(() => {
-			actionsBuild = null;
-		});
-	}
-	return actionsBuild;
-}
-
+// Check if tabs have changed and actions need to be fetched again.
+// Debounced, and page-load noise is ignored: onUpdated fires many times
+// per navigation, so only meaningful changes schedule a rebuild.
+let resetTimer = null;
+const scheduleResetOmni = () => {
+	clearTimeout(resetTimer);
+	resetTimer = setTimeout(resetOmni, 200);
+};
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 	if (changeInfo.status === "complete" || changeInfo.title || changeInfo.favIconUrl || changeInfo.pinned !== undefined || changeInfo.mutedInfo) {
-		invalidateActions();
+		scheduleResetOmni();
 	}
 });
-chrome.tabs.onCreated.addListener((tab) => invalidateActions());
-chrome.tabs.onRemoved.addListener((tabId, changeInfo) => invalidateActions());
-chrome.bookmarks.onCreated.addListener(invalidateActions);
-chrome.bookmarks.onRemoved.addListener(invalidateActions);
-chrome.bookmarks.onChanged.addListener(invalidateActions);
+chrome.tabs.onCreated.addListener((tab) => scheduleResetOmni());
+chrome.tabs.onRemoved.addListener((tabId, changeInfo) => scheduleResetOmni());
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
 	const tab = await chrome.tabs.get(activeInfo.tabId);
 	await trackRecentTab(tab);
@@ -579,6 +498,38 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 		await trackRecentTab(tab);
 	}
 });
+
+// Get tabs to populate in the actions
+const getTabs = () => {
+	chrome.tabs.query({}, (tabs) => {
+		tabs.forEach((tab) => {
+			tab.desc = prettyHost(tab.url);
+			tab.keycheck = false;
+			tab.action = "switch-tab";
+			tab.type = "tab";
+			if (tab.url) {
+				tab.favIconUrl = faviconForUrl(tab.url);
+			}
+		})
+		actions = tabs.concat(actions);
+	});
+}
+
+// Get bookmarks to populate in the actions
+const getBookmarks = () => {
+	const process_bookmark = (bookmarks) => {
+		for (const bookmark of bookmarks) {	
+			if (bookmark.url) {
+				actions.push({title:bookmark.title, desc:"Bookmark", id:bookmark.id, url:bookmark.url, type:"bookmark", action:"bookmark", emoji:true, emojiChar:"⭐️", keycheck:false})
+			}
+			if (bookmark.children) {
+				process_bookmark(bookmark.children);
+			}
+		}
+	}
+
+	chrome.bookmarks.getRecent(100, process_bookmark);
+}
 
 // Lots of different actions
 const switchTab = (tab) => {
@@ -690,8 +641,9 @@ const removeBookmark = (bookmark) => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	switch (message.request) {
 		case "get-actions":
-			ensureActions().then((list) => sendResponse({actions: list}));
-			return true;
+			resetOmni();
+			sendResponse({actions: actions});
+			break;
 		case "get-recents":
 			getRecentActions().then((recentActions) => {
 				sendResponse({actions: recentActions});
@@ -848,20 +800,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		case "open-options":
 			chrome.runtime.openOptionsPage();
 			break;
-		case "toggle-pin":
-			getCurrentTab().then((tab) => {
-				if (tab) {
-					chrome.tabs.update(tab.id, {pinned: !tab.pinned});
-				}
-			});
-			break;
-		case "toggle-mute":
-			getCurrentTab().then((tab) => {
-				if (tab) {
-					chrome.tabs.update(tab.id, {muted: !(tab.mutedInfo && tab.mutedInfo.muted)});
-				}
-			});
-			break;
 		case "get-suggestions":
 			getSuggestions(message.query).then((suggestionRows) => {
 				sendResponse({actions: suggestionRows});
@@ -889,6 +827,5 @@ chrome.storage.local.get(["leapTheme", "leapThemeMigrated"]).then((data) => {
 	chrome.storage.local.set(update);
 });
 
-// Nothing is built at startup: the first request builds the list, so a
-// cold service worker answers a shortcut without a tabs query and a
-// bookmark scan in front of it
+// Get actions
+resetOmni();
