@@ -331,9 +331,34 @@ $(document).ready(() => {
 		});
 	}
 
+	// After an extension reload the old content script lives on, orphaned,
+	// with its listeners still attached. Detect that and retire cleanly so
+	// two generations never fight over the keyboard.
+	var injectedUi = null;
+	function extensionAlive() {
+		try {
+			return !!(chrome && chrome.runtime && chrome.runtime.id);
+		} catch (err) {
+			return false;
+		}
+	}
+	function retireOrphan() {
+		window.removeEventListener("keydown", onCaptureKeydown, true);
+		window.removeEventListener("keypress", onCaptureKeypress, true);
+		window.removeEventListener("keyup", onCaptureKeyup, true);
+		$(document).off();
+		isOpen = false;
+		if (injectedUi) {
+			injectedUi.remove();
+			injectedUi = null;
+		}
+	}
+
 	// Append the omni into the current page
 	$.get(chrome.runtime.getURL('/content.html'), (data) => {
-		$(data).appendTo('body');
+		// Remove any UI a previous, now-orphaned script generation left behind
+		$(".omni-extension, #omni-extension-toast").remove();
+		injectedUi = $(data).appendTo('body');
 		updateInputPlaceholder();
 		updateRecentFilterVisibility();
 		renderRecentShortcuts();
@@ -1137,7 +1162,11 @@ $(document).ready(() => {
 	// Capture phase on window: runs before the page's own handlers, so the
 	// omni owns the keyboard while it is open even on sites with global
 	// key handling, and stray keystrokes are pulled back into its input
-	window.addEventListener("keydown", (e) => {
+	var onCaptureKeydown = (e) => {
+		if (!extensionAlive()) {
+			retireOrphan();
+			return;
+		}
 		// Global Alt+Shift shortcuts (work whether or not the omni is open)
 		if (e.altKey && e.shiftKey && !e.repeat) {
 			if (e.keyCode == 80) {
@@ -1252,22 +1281,34 @@ $(document).ready(() => {
 				handleAction(e);
 			}
 		}
-	}, true);
+	};
+
+	window.addEventListener("keydown", onCaptureKeydown, true);
 
 	// Keep keypress/keyup from the page too while the omni is open
-	window.addEventListener("keypress", (e) => {
+	var onCaptureKeypress = (e) => {
+		if (!extensionAlive()) {
+			retireOrphan();
+			return;
+		}
 		if (isOpen) {
 			e.stopPropagation();
 		}
-	}, true);
-	window.addEventListener("keyup", (e) => {
+	};
+	window.addEventListener("keypress", onCaptureKeypress, true);
+	var onCaptureKeyup = (e) => {
+		if (!extensionAlive()) {
+			retireOrphan();
+			return;
+		}
 		if (e.key == "Alt") {
 			hideNumberHints();
 		}
 		if (isOpen) {
 			e.stopPropagation();
 		}
-	}, true);
+	};
+	window.addEventListener("keyup", onCaptureKeyup, true);
 
 	// Recieve messages from background
 	chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
