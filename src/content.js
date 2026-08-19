@@ -383,7 +383,7 @@ $(document).ready(() => {
 		var actionTitle = isRecentLike() ? highlightRecentMatch(action.title, recentQuery) : escapeHtml(action.title);
 		var actionDesc = escapeHtml(action.desc);
 		var closeBtn = action.type == "tab" && action.action == "switch-tab" ? "<button class='omni-close-tab' title='Close tab'>✕</button>" : "";
-		return "<div class='omni-item' "+skip+" data-index='"+index+"' data-type='"+action.type+"' data-current-tab='"+(action.currentTab ? "true" : "false")+"'>"+img+"<div class='omni-item-details'><div class='omni-item-name'>"+actionTitle+"</div><div class='omni-item-desc'>"+actionDesc+"</div></div>"+keys+"<div class='omni-select'>Select <span class='omni-shortcut'>⏎</span></div>"+closeBtn+"<span class='omni-num'></span></div>";
+		return "<div class='omni-item' "+skip+" data-index='"+index+"' data-type='"+action.type+"' data-current-tab='"+(action.currentTab ? "true" : "false")+"'><span class='omni-num'></span>"+img+"<div class='omni-item-details'><div class='omni-item-name'>"+actionTitle+"</div><div class='omni-item-desc'>"+actionDesc+"</div></div>"+keys+"<div class='omni-select'>Select <span class='omni-shortcut'>⏎</span></div>"+closeBtn+"</div>";
 	}
 
 	// Add actions to the omni — built as strings and written in single DOM
@@ -450,7 +450,7 @@ $(document).ready(() => {
 			if (action.emoji) {
 				img = "<span class='omni-emoji-action'>"+action.emojiChar+"</span>"
 			}
-			return $("<div class='omni-item' data-index='"+index+"' data-type='"+action.type+"' data-url='"+action.url+"' data-current-tab='"+(action.currentTab ? "true" : "false")+"'>"+img+"<div class='omni-item-details'><div class='omni-item-name'>"+action.title+"</div><div class='omni-item-desc'>"+(action.desc || action.url)+"</div></div>"+keys+"<div class='omni-select'>Select <span class='omni-shortcut'>⏎</span></div><span class='omni-num'>"+(index < 9 ? index + 1 : "")+"</span></div>")[0]
+			return $("<div class='omni-item' data-index='"+index+"' data-type='"+action.type+"' data-url='"+action.url+"' data-current-tab='"+(action.currentTab ? "true" : "false")+"'><span class='omni-num'>"+(index < 9 ? index + 1 : "")+"</span>"+img+"<div class='omni-item-details'><div class='omni-item-name'>"+action.title+"</div><div class='omni-item-desc'>"+(action.desc || action.url)+"</div></div>"+keys+"<div class='omni-select'>Select <span class='omni-shortcut'>⏎</span></div></div>")[0]
 		}
 		actions.length && new VirtualizedList.default($("#omni-extension #omni-list")[0], {
 			height: 400,

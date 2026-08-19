@@ -484,7 +484,7 @@
 	flex: none;
 	width: 24px;
 	height: 24px;
-	margin-left: 20px;
+	margin-left: 11px;
 	border-radius: 6px;
 }
 .omni-extension .omni-emoji-action {
@@ -494,7 +494,7 @@
 	flex: none;
 	width: 24px;
 	height: 24px;
-	margin-left: 20px;
+	margin-left: 11px;
 	font-size: 19px;
 	line-height: 1;
 }
@@ -614,35 +614,36 @@
 
 /* ---------- Quick-jump numbers ---------- */
 
-/* Always present as a faint clue; holding Alt lights them into chips */
+/* A left number gutter, IntelliJ-switcher style: small keycap badges in a
+   consistent column before the favicon. Holding Alt flips them to accent. */
 .omni-extension .omni-num {
-	display: none;
+	display: inline-flex;
 	flex: none;
 	align-items: center;
 	justify-content: center;
-	margin-left: 8px;
-	margin-right: 16px;
-	height: 20px;
-	min-width: 20px;
-	padding: 0px 5px;
-	border-radius: 6px;
-	background: transparent;
-	border: 1px solid transparent;
-	color: var(--text-3);
-	font-size: 11px;
-	font-weight: 500;
-	letter-spacing: 0.02em;
-	opacity: 0.65;
-	transition: opacity 0.12s ease, background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+	width: 21px;
+	height: 21px;
+	margin-left: 14px;
+	border-radius: 5px;
+	background: var(--key-bg);
+	border: 1px solid var(--key-border);
+	color: var(--text-2);
+	font-size: 11.5px;
+	font-weight: 600;
+	transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
-.omni-extension .omni-num:not(:empty) {
-	display: inline-flex;
+/* Rows past nine keep an invisible badge so the column stays aligned */
+.omni-extension .omni-num:empty {
+	visibility: hidden;
 }
 .omni-extension.omni-show-numbers .omni-num:not(:empty) {
-	opacity: 1;
-	background: color-mix(in srgb, var(--accent) 12%, transparent);
-	border-color: color-mix(in srgb, var(--accent) 20%, transparent);
-	color: var(--accent);
+	background: var(--accent);
+	border-color: var(--accent);
+	color: #ffffff;
+}
+.omni-extension .omni-item-active .omni-num:not(:empty) {
+	border-color: color-mix(in srgb, var(--accent) 35%, var(--key-border));
+	color: var(--text);
 }
 
 /* ---------- Keycaps ---------- */
