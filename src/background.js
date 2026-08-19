@@ -128,8 +128,14 @@ const getRecentActions = async () => {
 
 // All open tabs in tab-strip order (current window first) for the explorer drawer
 const getExplorerTabs = async () => {
-	const [tabs, currentTab] = await Promise.all([chrome.tabs.query({}), getCurrentTab()]);
+	const [tabs, currentTab, recentItems] = await Promise.all([chrome.tabs.query({}), getCurrentTab(), getRecentItems()]);
 	const currentWindowId = currentTab ? currentTab.windowId : null;
+	const trackedTimestamps = new Map();
+	recentItems.forEach((item) => {
+		if (item.kind === "tab") {
+			trackedTimestamps.set(item.tabId, item.timestamp || 0);
+		}
+	});
 	return tabs
 		.filter((tab) => tab.id && tab.url)
 		.sort((a, b) => {
@@ -143,6 +149,7 @@ const getExplorerTabs = async () => {
 		.map((tab) => {
 			const isCurrent = currentTab && tab.id === currentTab.id;
 			return {
+				lastActive: trackedTimestamps.get(tab.id) || tab.lastAccessed || 0,
 				title: tab.title || tab.url,
 				desc: (isCurrent ? "Current tab • " : "") + prettyHost(tab.url),
 				type: "tab",

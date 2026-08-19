@@ -250,13 +250,34 @@ $(document).ready(() => {
 		if (!visibleItems.length) {
 			return;
 		}
-		if (isExplorerFlow()) {
-			// File-explorer semantics: open with the current tab highlighted
+		if (currentMode == "explorer") {
+			// The drawer keeps file-explorer semantics: current tab highlighted
 			var currentItem = visibleItems.filter(function() {
 				return $(this).attr("data-current-tab") == "true";
 			}).first();
 			if (currentItem.length) {
 				activateElement(currentItem);
+				return;
+			}
+		}
+		if (currentMode == "recent" && paletteExplorerFlow) {
+			// All-tabs palette: the list is in tab order, so find the most
+			// recently used other tab to keep the double-tap bounce working
+			var bestElement = null;
+			var bestTime = -1;
+			visibleItems.each(function() {
+				if (this.getAttribute("data-current-tab") == "true") {
+					return;
+				}
+				var action = actions[parseInt(this.getAttribute("data-index"), 10)];
+				var time = (action && action.lastActive) || 0;
+				if (time > bestTime) {
+					bestTime = time;
+					bestElement = this;
+				}
+			});
+			if (bestElement) {
+				activateElement($(bestElement));
 				return;
 			}
 		}
