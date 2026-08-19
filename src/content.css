@@ -614,6 +614,7 @@
 
 /* ---------- Quick-jump numbers ---------- */
 
+/* Always present as a faint clue; holding Alt lights them into chips */
 .omni-extension .omni-num {
 	display: none;
 	flex: none;
@@ -622,21 +623,26 @@
 	margin-left: 8px;
 	margin-right: 16px;
 	height: 20px;
-	min-width: 26px;
-	padding: 0px 6px;
+	min-width: 20px;
+	padding: 0px 5px;
 	border-radius: 6px;
-	background: var(--key-bg);
-	border: 1px solid var(--key-border);
-	color: var(--text-2);
+	background: transparent;
+	border: 1px solid transparent;
+	color: var(--text-3);
 	font-size: 11px;
 	font-weight: 500;
 	letter-spacing: 0.02em;
-	opacity: 0;
-	transition: opacity 0.12s ease;
+	opacity: 0.65;
+	transition: opacity 0.12s ease, background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.omni-extension .omni-num:not(:empty) {
+	display: inline-flex;
 }
 .omni-extension.omni-show-numbers .omni-num:not(:empty) {
-	display: inline-flex;
 	opacity: 1;
+	background: color-mix(in srgb, var(--accent) 12%, transparent);
+	border-color: color-mix(in srgb, var(--accent) 20%, transparent);
+	color: var(--accent);
 }
 
 /* ---------- Keycaps ---------- */

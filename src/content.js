@@ -196,16 +196,19 @@ $(document).ready(() => {
 			return this.style.display !== "none";
 		});
 	}
+	function updateNumberHints() {
+		visibleListRows().each(function(i) {
+			var chip = this.querySelector(".omni-num");
+			if (chip) {
+				chip.textContent = i < 9 ? String(i + 1) : "";
+			}
+		});
+	}
 	function showNumberHints() {
 		if (!isOpen) {
 			return;
 		}
-		visibleListRows().each(function(i) {
-			var chip = this.querySelector(".omni-num");
-			if (chip) {
-				chip.textContent = i < 9 ? (isMacPlatform ? "⌥" : "Alt+") + (i + 1) : "";
-			}
-		});
+		updateNumberHints();
 		$("#omni-extension").addClass("omni-show-numbers");
 	}
 	function hideNumberHints() {
@@ -376,12 +379,12 @@ $(document).ready(() => {
 		return html;
 	}
 	function populateOmni() {
-		hideNumberHints();
 		renderToken++;
 		var token = renderToken;
 		var firstChunkEnd = Math.min(actions.length, 250);
 		$("#omni-extension #omni-list").addClass("omni-has-pill").html("<div id='omni-selection'></div>" + buildRowsHtml(0, firstChunkEnd));
 		$(".omni-extension #omni-results").html(actions.length+" results");
+		updateNumberHints();
 		setDefaultActiveItem();
 		if (actions.length > firstChunkEnd) {
 			window.setTimeout(() => {
@@ -422,7 +425,7 @@ $(document).ready(() => {
 			if (action.emoji) {
 				img = "<span class='omni-emoji-action'>"+action.emojiChar+"</span>"
 			}
-			return $("<div class='omni-item' data-index='"+index+"' data-type='"+action.type+"' data-url='"+action.url+"' data-current-tab='"+(action.currentTab ? "true" : "false")+"'>"+img+"<div class='omni-item-details'><div class='omni-item-name'>"+action.title+"</div><div class='omni-item-desc'>"+(action.desc || action.url)+"</div></div>"+keys+"<div class='omni-select'>Select <span class='omni-shortcut'>⏎</span></div></div>")[0]
+			return $("<div class='omni-item' data-index='"+index+"' data-type='"+action.type+"' data-url='"+action.url+"' data-current-tab='"+(action.currentTab ? "true" : "false")+"'>"+img+"<div class='omni-item-details'><div class='omni-item-name'>"+action.title+"</div><div class='omni-item-desc'>"+(action.desc || action.url)+"</div></div>"+keys+"<div class='omni-select'>Select <span class='omni-shortcut'>⏎</span></div><span class='omni-num'>"+(index < 9 ? index + 1 : "")+"</span></div>")[0]
 		}
 		actions.length && new VirtualizedList.default($("#omni-extension #omni-list")[0], {
 			height: 400,
@@ -945,6 +948,7 @@ $(document).ready(() => {
 				}
 			}
 			$(".omni-extension #omni-results").html(visibleCount + " results");
+			updateNumberHints();
 			setDefaultActiveItem();
 			return;
 		}
