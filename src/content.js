@@ -239,6 +239,20 @@ $(document).ready(() => {
 		}
 	}
 
+	// The action list is fetched when the palette opens, so a toggle only
+	// needs to refresh it when the palette is already on screen
+	function refreshOpenPalette() {
+		if (!isOpen || currentMode != "default") {
+			return;
+		}
+		chrome.runtime.sendMessage({request:"get-actions"}, (response) => {
+			if (response && response.actions) {
+				actions = response.actions;
+				populateOmni();
+			}
+		});
+	}
+
 	// Quick-jump numbers: chips fade in on the first nine visible rows
 	// while Alt is held, and Alt+digit activates that row directly
 	var isMacPlatform = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
@@ -438,11 +452,6 @@ $(document).ready(() => {
 
 		// Get checkmark image for toast
 		$("#omni-extension-toast img").attr("src", chrome.runtime.getURL("assets/check.svg"));
-
-		// Request actions from the background
-		chrome.runtime.sendMessage({request:"get-actions"}, (response) => {
-			actions = response.actions;
-		});
 
 		// New tab page workaround
 		if (window.location.href == chrome.runtime.getURL("newtab.html")) {
@@ -1247,27 +1256,11 @@ $(document).ready(() => {
 		if (e.altKey && e.shiftKey && !e.repeat) {
 			if (e.keyCode == 80) {
 				// Alt+Shift+P: pin/unpin tab
-				if (actions.find(x => x.action == "pin") != undefined) {
-					chrome.runtime.sendMessage({request:"pin-tab"});
-				} else {
-					chrome.runtime.sendMessage({request:"unpin-tab"});
-				}
-				chrome.runtime.sendMessage({request:"get-actions"}, (response) => {
-					actions = response.actions;
-					populateOmni();
-				});
+				chrome.runtime.sendMessage({request:"toggle-pin"}, refreshOpenPalette);
 				return;
 			} else if (e.keyCode == 77) {
 				// Alt+Shift+M: mute/unmute tab
-				if (actions.find(x => x.action == "mute") != undefined) {
-					chrome.runtime.sendMessage({request:"mute-tab"});
-				} else {
-					chrome.runtime.sendMessage({request:"unmute-tab"});
-				}
-				chrome.runtime.sendMessage({request:"get-actions"}, (response) => {
-					actions = response.actions;
-					populateOmni();
-				});
+				chrome.runtime.sendMessage({request:"toggle-mute"}, refreshOpenPalette);
 				return;
 			} else if (e.keyCode == 67) {
 				// Alt+Shift+C: compose email
