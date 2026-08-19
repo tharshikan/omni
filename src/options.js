@@ -109,15 +109,104 @@ const renderShortcutRow = (label, shortcut) => {
 	row.appendChild(key);
 	shortcutsList.appendChild(row);
 };
-if (typeof chrome !== "undefined" && chrome.commands && chrome.commands.getAll) {
-	chrome.commands.getAll().then((commands) => {
-		Object.keys(COMMAND_LABELS).forEach((name) => {
-			const command = commands.find((c) => c.name === name);
-			renderShortcutRow(COMMAND_LABELS[name], command && command.shortcut);
-		});
+// Editable in-palette chord: click the chip, press keys, saved instantly
+const CLOSE_BINDING_KEY = "leapCloseTabShortcut";
+const isMacOptions = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+const DEFAULT_CLOSE_BINDING = isMacOptions
+	? { metaKey: true, ctrlKey: false, altKey: false, shiftKey: false, code: "Backspace", label: "⌘⌫" }
+	: { metaKey: false, ctrlKey: true, altKey: false, shiftKey: false, code: "Backspace", label: "Ctrl+⌫" };
+
+const bindingLabel = (e) => {
+	const parts = [];
+	if (isMacOptions) {
+		if (e.ctrlKey) parts.push("⌃");
+		if (e.altKey) parts.push("⌥");
+		if (e.shiftKey) parts.push("⇧");
+		if (e.metaKey) parts.push("⌘");
+	} else {
+		if (e.ctrlKey) parts.push("Ctrl");
+		if (e.altKey) parts.push("Alt");
+		if (e.shiftKey) parts.push("Shift");
+		if (e.metaKey) parts.push("Win");
+	}
+	let key = e.code;
+	if (key.indexOf("Key") === 0) key = key.slice(3);
+	else if (key.indexOf("Digit") === 0) key = key.slice(5);
+	else if (key === "Backspace") key = "⌫";
+	else if (key === "Delete") key = "⌦";
+	else key = e.key && e.key.length === 1 ? e.key.toUpperCase() : e.key;
+	return isMacOptions ? parts.join("") + key : parts.concat([key]).join("+");
+};
+
+let recordingClose = false;
+const renderCloseBindingRow = () => {
+	const row = document.createElement("div");
+	row.className = "shortcut-row";
+	const name = document.createElement("span");
+	name.textContent = "Close tab in the list";
+	const controls = document.createElement("span");
+	const chip = document.createElement("kbd");
+	chip.className = "editable";
+	chip.title = "Click, then press the keys you want";
+	const reset = document.createElement("button");
+	reset.className = "reset-btn";
+	reset.title = "Reset to default";
+	reset.textContent = "↺";
+	controls.appendChild(chip);
+	controls.appendChild(reset);
+	row.appendChild(name);
+	row.appendChild(controls);
+	shortcutsList.appendChild(row);
+
+	const setChip = (binding) => {
+		chip.textContent = binding.label;
+		chip.classList.remove("recording");
+	};
+	storage.get(CLOSE_BINDING_KEY).then((data) => {
+		setChip((data && data[CLOSE_BINDING_KEY]) || DEFAULT_CLOSE_BINDING);
 	});
+	chip.addEventListener("click", () => {
+		recordingClose = true;
+		chip.textContent = "Press keys…";
+		chip.classList.add("recording");
+	});
+	reset.addEventListener("click", () => {
+		recordingClose = false;
+		storage.set({ [CLOSE_BINDING_KEY]: DEFAULT_CLOSE_BINDING });
+		setChip(DEFAULT_CLOSE_BINDING);
+	});
+	window.addEventListener("keydown", (e) => {
+		if (!recordingClose) return;
+		e.preventDefault();
+		e.stopPropagation();
+		if (e.key === "Escape") {
+			recordingClose = false;
+			storage.get(CLOSE_BINDING_KEY).then((data) => setChip((data && data[CLOSE_BINDING_KEY]) || DEFAULT_CLOSE_BINDING));
+			return;
+		}
+		if (["Meta", "Control", "Alt", "Shift"].indexOf(e.key) > -1) return;
+		if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+			chip.textContent = "Add ⌘, ⌃, or ⌥…";
+			return;
+		}
+		const binding = { metaKey: e.metaKey, ctrlKey: e.ctrlKey, altKey: e.altKey, shiftKey: e.shiftKey, code: e.code, label: bindingLabel(e) };
+		recordingClose = false;
+		storage.set({ [CLOSE_BINDING_KEY]: binding });
+		setChip(binding);
+	}, true);
+};
+
+const renderAllShortcutRows = (commands) => {
+	Object.keys(COMMAND_LABELS).forEach((name) => {
+		const command = commands && commands.find((c) => c.name === name);
+		renderShortcutRow(COMMAND_LABELS[name], command && command.shortcut);
+	});
+	renderCloseBindingRow();
+};
+if (typeof chrome !== "undefined" && chrome.commands && chrome.commands.getAll) {
+	chrome.commands.getAll().then(renderAllShortcutRows);
 } else {
-	Object.keys(COMMAND_LABELS).forEach((name) => renderShortcutRow(COMMAND_LABELS[name], null));
+	renderAllShortcutRows(null);
 }
 document.getElementById("edit-shortcuts").addEventListener("click", () => {
 	if (typeof chrome !== "undefined" && chrome.tabs) {

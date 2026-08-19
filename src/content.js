@@ -106,6 +106,9 @@ $(document).ready(() => {
 			if (changes.leapUiScale) {
 				applyScale(changes.leapUiScale.newValue);
 			}
+			if (changes.leapCloseTabShortcut) {
+				applyCloseBinding(changes.leapCloseTabShortcut.newValue);
+			}
 		});
 	}
 
@@ -191,6 +194,28 @@ $(document).ready(() => {
 	// Quick-jump numbers: chips fade in on the first nine visible rows
 	// while Alt is held, and Alt+digit activates that row directly
 	var isMacPlatform = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+
+	// The close-tab chord is user-configurable from the options page
+	var defaultCloseBinding = isMacPlatform
+		? {metaKey: true, ctrlKey: false, altKey: false, shiftKey: false, code: "Backspace", label: "⌘⌫"}
+		: {metaKey: false, ctrlKey: true, altKey: false, shiftKey: false, code: "Backspace", label: "Ctrl+⌫"};
+	var closeTabBinding = defaultCloseBinding;
+	function applyCloseBinding(binding) {
+		closeTabBinding = (binding && binding.code) ? binding : defaultCloseBinding;
+		$("#omni-close-key").text(closeTabBinding.label);
+	}
+	chrome.storage.local.get("leapCloseTabShortcut").then((data) => {
+		applyCloseBinding(data && data.leapCloseTabShortcut);
+	});
+	function matchesCloseShortcut(e) {
+		var b = closeTabBinding;
+		return e.code === b.code &&
+			!!e.metaKey === !!b.metaKey &&
+			!!e.ctrlKey === !!b.ctrlKey &&
+			!!e.altKey === !!b.altKey &&
+			!!e.shiftKey === !!b.shiftKey;
+	}
+
 	function visibleListRows() {
 		return $("#omni-extension #omni-list .omni-item").filter(function() {
 			return this.style.display !== "none";
@@ -313,9 +338,9 @@ $(document).ready(() => {
 		updateRecentFilterVisibility();
 		renderRecentShortcuts();
 		if (navigator.platform.toUpperCase().indexOf("MAC") < 0) {
-			$("#omni-close-key").text("Ctrl⌫");
 			$("#omni-jump-key").text("Alt 1–9");
 		}
+		$("#omni-close-key").text(closeTabBinding.label);
 		applyTheme(currentTheme);
 		applyScale(uiScale);
 
@@ -1171,8 +1196,8 @@ $(document).ready(() => {
 			}
 		}
 
-		// Cmd/Ctrl+Backspace closes the selected tab, palette stays open
-		if ((e.metaKey || e.ctrlKey) && (e.key == "Backspace" || e.keyCode == 8)) {
+		// The close-tab chord closes the selected tab, palette stays open
+		if (matchesCloseShortcut(e)) {
 			e.preventDefault();
 			closeActiveTabRow();
 			return;

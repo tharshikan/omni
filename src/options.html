@@ -132,6 +132,25 @@
 				text-align: center;
 			}
 			kbd.unset { color: var(--text-2); font-style: italic; }
+			kbd.editable { cursor: pointer; }
+			kbd.editable:hover { border-color: var(--accent); }
+			kbd.recording {
+				color: var(--accent);
+				border-color: var(--accent);
+				background: color-mix(in srgb, var(--accent) 10%, transparent);
+			}
+			.reset-btn {
+				margin-left: 8px;
+				width: 26px;
+				height: 26px;
+				border: 1px solid var(--hairline);
+				border-radius: 7px;
+				background: transparent;
+				color: var(--text-2);
+				font-size: 13px;
+				cursor: pointer;
+			}
+			.reset-btn:hover { color: var(--text); border-color: var(--accent); }
 			.btn {
 				margin-top: 14px;
 				padding: 8px 16px;
@@ -197,7 +216,6 @@
 					<div class="kbd-ref">
 						<span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
 						<span><kbd>⏎</kbd> select</span>
-						<span><kbd>⌘⌫</kbd> close tab</span>
 						<span><kbd>esc</kbd> dismiss</span>
 						<span><kbd>⌥⇧P</kbd> pin tab</span>
 						<span><kbd>⌥⇧M</kbd> mute tab</span>
