@@ -231,53 +231,53 @@
 .omni-extension #omni-recent-layout {
 	display: block;
 }
-.omni-extension.omni-recent-mode #omni-recent-layout {
+/* The quick-launch rail: a slim strip flush against the panel's left
+   edge, shown in the palette and recents whenever the setting is on */
+.omni-extension.omni-rail-on #omni-recent-layout {
 	display: grid;
-	grid-template-columns: 64px minmax(0, 1fr);
-	column-gap: 8px;
-	align-items: start;
-	padding-left: 10px;
-	padding-right: 0px;
+	grid-template-columns: 46px minmax(0, 1fr);
+	column-gap: 0px;
+	align-items: stretch;
+	padding: 0px;
 }
 .omni-extension #omni-shortcuts {
 	display: none;
 }
-.omni-extension.omni-recent-mode #omni-shortcuts {
+.omni-extension.omni-rail-on #omni-shortcuts {
 	display: flex;
 	flex-direction: column;
-	gap: 8px;
-	padding-top: 10px;
-	padding-bottom: 10px;
+	align-items: center;
+	gap: 4px;
+	padding: 10px 0px;
+	border-right: 1px solid var(--hairline);
+	background: color-mix(in srgb, var(--key-bg) 55%, transparent);
 }
 .omni-extension .omni-shortcut-item {
-	width: 52px;
-	height: 52px;
-	border: 1px solid var(--hairline);
-	border-radius: 13px;
-	background: var(--key-bg);
+	width: 34px;
+	height: 34px;
+	border: 0px;
+	border-radius: 9px;
+	background: transparent;
 	color: var(--text);
 	cursor: pointer;
-	transition: background-color 0.14s ease, border-color 0.14s ease, transform 0.18s cubic-bezier(0.3, 1.4, 0.4, 1), box-shadow 0.18s ease;
+	transition: background-color 0.14s ease, transform 0.18s cubic-bezier(0.3, 1.4, 0.4, 1);
 }
 .omni-extension .omni-shortcut-item:hover {
-	background: var(--select);
-	transform: translateY(-2px);
-	box-shadow: 0 6px 16px rgba(0, 0, 0, 0.14);
+	background: var(--key-bg);
+	transform: translateY(-1px);
 }
 .omni-extension .omni-shortcut-item:active {
-	transform: translateY(0px) scale(0.94);
-	box-shadow: none;
+	transform: scale(0.92);
 }
 .omni-extension .omni-shortcut-item-active {
 	background: var(--select);
-	border-color: var(--accent);
-	box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+	box-shadow: inset 0 0 0 1.5px var(--accent);
 }
 .omni-extension .omni-shortcut-icon {
 	display: block;
-	width: 22px;
-	height: 22px;
-	margin: 14px auto;
+	width: 18px;
+	height: 18px;
+	margin: 8px auto;
 }
 .omni-extension.omni-recent-mode #omni-search {
 	/* IntelliJ-style compact search row at the top left */

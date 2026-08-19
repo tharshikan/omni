@@ -63,6 +63,13 @@ $(document).ready(() => {
 		applyScale(data && data.leapUiScale);
 	});
 
+	// Quick-launch rail visibility (palette + recents), user-configurable
+	var railEnabled = true;
+	chrome.storage.local.get("leapShowRail").then((data) => {
+		railEnabled = !(data && data.leapShowRail === false);
+		updateRecentFilterVisibility();
+	});
+
 	// User-chosen widths for the palette and the drawer
 	var paletteWidth = 0;
 	var drawerWidth = 0;
@@ -134,6 +141,10 @@ $(document).ready(() => {
 			if (changes.leapCloseTabShortcut) {
 				applyCloseBinding(changes.leapCloseTabShortcut.newValue);
 			}
+			if (changes.leapShowRail) {
+				railEnabled = changes.leapShowRail.newValue !== false;
+				updateRecentFilterVisibility();
+			}
 			if (changes.leapPaletteWidth || changes.leapDrawerWidth) {
 				if (changes.leapPaletteWidth) {
 					paletteWidth = parseInt(changes.leapPaletteWidth.newValue, 10) || 0;
@@ -147,9 +158,10 @@ $(document).ready(() => {
 	}
 
 	function updateRecentFilterVisibility() {
-		var hasQuery = $("#omni-extension input").val().length > 0;
+		var hasQuery = ($("#omni-extension input").val() || "").length > 0;
 		$("#omni-extension").toggleClass("omni-recent-mode", currentMode == "recent");
 		$("#omni-extension").toggleClass("omni-explorer-mode", currentMode == "explorer");
+		$("#omni-extension").toggleClass("omni-rail-on", railEnabled && (currentMode == "recent" || currentMode == "default"));
 		$("#omni-extension").toggleClass("omni-recent-filtering", isRecentLike() && hasQuery);
 		$("#omni-recent-query-text").text(recentQuery);
 	}

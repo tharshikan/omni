@@ -102,6 +102,15 @@ const wireWidthSlider = (sliderId, badgeId, storageKey, fallback) => {
 wireWidthSlider("palette-width", "palette-width-value", "leapPaletteWidth", 680);
 wireWidthSlider("drawer-width", "drawer-width-value", "leapDrawerWidth", 360);
 
+const RAIL_KEY = "leapShowRail";
+const railToggle = document.getElementById("show-rail");
+storage.get(RAIL_KEY).then((data) => {
+	railToggle.checked = !(data && data[RAIL_KEY] === false);
+});
+railToggle.addEventListener("change", () => {
+	storage.set({ [RAIL_KEY]: railToggle.checked });
+});
+
 // Keyboard shortcuts: Chrome owns command bindings, so show the live ones
 // and deep-link to Chrome's editor where they can be changed
 const COMMAND_LABELS = {
