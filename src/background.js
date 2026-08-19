@@ -136,7 +136,7 @@ const getExplorerTabs = async () => {
 			trackedTimestamps.set(item.tabId, item.timestamp || 0);
 		}
 	});
-	return tabs
+	const sorted = tabs
 		.filter((tab) => tab.id && tab.url)
 		.sort((a, b) => {
 			if (a.windowId !== b.windowId) {
@@ -145,10 +145,20 @@ const getExplorerTabs = async () => {
 				return a.windowId - b.windowId;
 			}
 			return a.index - b.index;
-		})
+		});
+	// Group headers only when tabs span several windows
+	const windowLabels = new Map();
+	sorted.forEach((tab) => {
+		if (!windowLabels.has(tab.windowId)) {
+			windowLabels.set(tab.windowId, tab.windowId === currentWindowId ? "This window" : "Window " + (windowLabels.size + (windowLabels.has(currentWindowId) ? 0 : 1)));
+		}
+	});
+	const useSections = windowLabels.size > 1;
+	return sorted
 		.map((tab) => {
 			const isCurrent = currentTab && tab.id === currentTab.id;
 			return {
+				section: useSections ? windowLabels.get(tab.windowId) : undefined,
 				lastActive: trackedTimestamps.get(tab.id) || tab.lastAccessed || 0,
 				title: tab.title || tab.url,
 				desc: (isCurrent ? "Current tab • " : "") + prettyHost(tab.url),

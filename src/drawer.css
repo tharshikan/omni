@@ -1,0 +1,121 @@
+/* Leap explorer drawer — the sidebar's own styling layer, independent of
+   the palette's content.css. Everything here scopes to omni-explorer-mode. */
+
+.omni-extension.omni-explorer-mode #omni-wrap {
+	width: var(--leap-drawer-width, 360px);
+	top: 0px;
+	bottom: 0px;
+	left: 0px;
+	right: auto;
+	margin: 0px;
+	height: calc(100vh / var(--leap-zoom, 1));
+	perspective: none;
+}
+.omni-extension.omni-explorer-mode #omni {
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	border-radius: 0px 14px 14px 0px;
+	border-top: 0px !important;
+	border-bottom: 0px !important;
+	border-left: 0px !important;
+	border-right: 1px solid var(--hairline) !important;
+	animation: omni-slide-in 0.28s cubic-bezier(0.23, 1, 0.32, 1);
+}
+@keyframes omni-slide-in {
+	0% { transform: translateX(-102%); }
+	65% { transform: translateX(5px); }
+	100% { transform: translateX(0px); }
+}
+.omni-extension.omni-explorer-mode.omni-hiding #omni {
+	opacity: 1;
+	transform: translateX(-101%);
+	transition: transform 0.16s cubic-bezier(0.4, 0, 1, 1);
+}
+.omni-extension.omni-explorer-mode #omni-overlay {
+	background: transparent !important;
+}
+
+/* Header: compact search */
+.omni-extension.omni-explorer-mode #omni-search {
+	flex: none;
+	height: 48px;
+	padding: 0px 14px;
+}
+.omni-extension.omni-explorer-mode #omni-search-icon {
+	width: 14px;
+	height: 14px;
+	margin-right: 9px;
+}
+.omni-extension.omni-explorer-mode input {
+	font-size: 14px;
+	font-weight: 400;
+}
+
+/* Body fills the height */
+.omni-extension.omni-explorer-mode #omni-recent-layout {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+}
+.omni-extension.omni-explorer-mode #omni-list {
+	flex: 1;
+	height: auto;
+	max-height: none;
+	box-sizing: border-box;
+}
+
+/* Slick, dense rows: single line, title only, smaller furniture */
+.omni-extension.omni-explorer-mode .omni-item {
+	height: 40px;
+}
+.omni-extension.omni-explorer-mode .omni-item-desc {
+	display: none !important;
+}
+.omni-extension.omni-explorer-mode .omni-item-name {
+	font-size: 13.5px;
+}
+.omni-extension.omni-explorer-mode .omni-icon,
+.omni-extension.omni-explorer-mode .omni-emoji-action {
+	width: 20px;
+	height: 20px;
+	margin-left: 9px;
+	font-size: 15px;
+}
+.omni-extension.omni-explorer-mode .omni-num {
+	width: 19px;
+	height: 19px;
+	margin-left: 10px;
+	font-size: 10.5px;
+}
+.omni-extension.omni-explorer-mode .omni-select {
+	display: none !important;
+}
+.omni-extension.omni-explorer-mode .omni-close-tab {
+	width: 24px;
+	height: 24px;
+	margin-right: 10px;
+}
+/* The current tab reads in accent instead of a subtitle marker */
+.omni-extension.omni-explorer-mode .omni-item[data-current-tab="true"] .omni-item-name {
+	color: var(--accent) !important;
+	font-weight: 500;
+}
+
+/* Window group headers */
+.omni-extension.omni-explorer-mode .omni-section {
+	padding: 12px 14px 4px;
+	font-size: 10.5px;
+	letter-spacing: 0.06em;
+}
+
+/* Slim footer: count only, no keyboard hints in the narrow panel */
+.omni-extension.omni-explorer-mode #omni-footer {
+	flex: none;
+	height: 36px;
+	padding: 0px 14px;
+}
+.omni-extension.omni-explorer-mode #omni-arrows {
+	display: none;
+}

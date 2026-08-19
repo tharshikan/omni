@@ -63,6 +63,31 @@ $(document).ready(() => {
 		applyScale(data && data.leapUiScale);
 	});
 
+	// User-chosen widths for the palette and the drawer
+	var paletteWidth = 0;
+	var drawerWidth = 0;
+	function applyWidths() {
+		var root = $("#omni-extension").get(0);
+		if (!root) {
+			return;
+		}
+		if (paletteWidth) {
+			root.style.setProperty("--leap-palette-width", paletteWidth + "px");
+		} else {
+			root.style.removeProperty("--leap-palette-width");
+		}
+		if (drawerWidth) {
+			root.style.setProperty("--leap-drawer-width", drawerWidth + "px");
+		} else {
+			root.style.removeProperty("--leap-drawer-width");
+		}
+	}
+	chrome.storage.local.get(["leapPaletteWidth", "leapDrawerWidth"]).then((data) => {
+		paletteWidth = parseInt(data && data.leapPaletteWidth, 10) || 0;
+		drawerWidth = parseInt(data && data.leapDrawerWidth, 10) || 0;
+		applyWidths();
+	});
+
 	// Apply the chosen theme by writing its variables onto the UI roots;
 	// "auto" clears them so the system palette in the stylesheet wins
 	var currentTheme = "bright";
@@ -108,6 +133,15 @@ $(document).ready(() => {
 			}
 			if (changes.leapCloseTabShortcut) {
 				applyCloseBinding(changes.leapCloseTabShortcut.newValue);
+			}
+			if (changes.leapPaletteWidth || changes.leapDrawerWidth) {
+				if (changes.leapPaletteWidth) {
+					paletteWidth = parseInt(changes.leapPaletteWidth.newValue, 10) || 0;
+				}
+				if (changes.leapDrawerWidth) {
+					drawerWidth = parseInt(changes.leapDrawerWidth.newValue, 10) || 0;
+				}
+				applyWidths();
 			}
 		});
 	}
@@ -389,6 +423,7 @@ $(document).ready(() => {
 		$("#omni-close-key").text(closeTabBinding.label);
 		applyTheme(currentTheme);
 		applyScale(uiScale);
+		applyWidths();
 
 		// Get checkmark image for toast
 		$("#omni-extension-toast img").attr("src", chrome.runtime.getURL("assets/check.svg"));
@@ -524,6 +559,11 @@ $(document).ready(() => {
 			lastMouse = null;
 			fallbackState = null;
 			actions = response.actions;
+			if (currentMode == "recent" && response && response.actions) {
+				// Window group headers are a drawer feature; the palette's
+				// scored filtering would interleave them
+				response.actions.forEach((a) => { delete a.section; });
+			}
 			recentActions = isRecentLike() ? response.actions.slice() : [];
 			recentQuery = "";
 			isFiltered = false;

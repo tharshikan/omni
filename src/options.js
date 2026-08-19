@@ -85,6 +85,23 @@ scaleSlider.addEventListener("input", () => {
 	storage.set({ [SCALE_KEY]: scaleSlider.value / 100 });
 });
 
+// Width sliders for the palette and the drawer
+const wireWidthSlider = (sliderId, badgeId, storageKey, fallback) => {
+	const slider = document.getElementById(sliderId);
+	const badge = document.getElementById(badgeId);
+	storage.get(storageKey).then((data) => {
+		const width = parseInt(data && data[storageKey], 10) || fallback;
+		slider.value = width;
+		badge.textContent = width + "px";
+	});
+	slider.addEventListener("input", () => {
+		badge.textContent = slider.value + "px";
+		storage.set({ [storageKey]: parseInt(slider.value, 10) });
+	});
+};
+wireWidthSlider("palette-width", "palette-width-value", "leapPaletteWidth", 680);
+wireWidthSlider("drawer-width", "drawer-width-value", "leapDrawerWidth", 360);
+
 // Keyboard shortcuts: Chrome owns command bindings, so show the live ones
 // and deep-link to Chrome's editor where they can be changed
 const COMMAND_LABELS = {

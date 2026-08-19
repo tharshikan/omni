@@ -108,7 +108,7 @@
 			}
 			.switch input:checked + .knob { background: var(--accent); }
 			.switch input:checked + .knob::after { transform: translateX(18px); }
-			#ui-scale { width: 220px; flex: none; accent-color: var(--accent); cursor: pointer; }
+			#ui-scale, #palette-width, #drawer-width { width: 220px; flex: none; accent-color: var(--accent); cursor: pointer; }
 			.shortcut-row {
 				display: flex;
 				align-items: center;
@@ -194,6 +194,20 @@
 					<div class="setting-desc">Make the palette, switcher, and drawer bigger or smaller. Applies instantly.</div>
 				</div>
 				<input type="range" id="ui-scale" min="90" max="130" step="5" value="100">
+			</div>
+			<div class="setting" style="margin-top:14px">
+				<div class="setting-text">
+					<div class="setting-name">Palette width <span id="palette-width-value" class="scale-badge">680px</span></div>
+					<div class="setting-desc">Width of the command palette and recents switcher.</div>
+				</div>
+				<input type="range" id="palette-width" min="560" max="880" step="20" value="680">
+			</div>
+			<div class="setting" style="margin-top:14px">
+				<div class="setting-text">
+					<div class="setting-name">Sidebar width <span id="drawer-width-value" class="scale-badge">360px</span></div>
+					<div class="setting-desc">Width of the explorer drawer.</div>
+				</div>
+				<input type="range" id="drawer-width" min="280" max="560" step="20" value="360">
 			</div>
 			<h2 class="section-gap">Search</h2>
 			<div class="setting">
