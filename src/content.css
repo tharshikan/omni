@@ -612,6 +612,33 @@
 	display: none !important;
 }
 
+/* ---------- Quick-jump numbers ---------- */
+
+.omni-extension .omni-num {
+	display: none;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	margin-left: 8px;
+	margin-right: 16px;
+	height: 20px;
+	min-width: 26px;
+	padding: 0px 6px;
+	border-radius: 6px;
+	background: var(--key-bg);
+	border: 1px solid var(--key-border);
+	color: var(--text-2);
+	font-size: 11px;
+	font-weight: 500;
+	letter-spacing: 0.02em;
+	opacity: 0;
+	transition: opacity 0.12s ease;
+}
+.omni-extension.omni-show-numbers .omni-num:not(:empty) {
+	display: inline-flex;
+	opacity: 1;
+}
+
 /* ---------- Keycaps ---------- */
 
 .omni-extension .omni-shortcut {

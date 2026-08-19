@@ -188,6 +188,30 @@ $(document).ready(() => {
 		}
 	}
 
+	// Quick-jump numbers: chips fade in on the first nine visible rows
+	// while Alt is held, and Alt+digit activates that row directly
+	var isMacPlatform = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+	function visibleListRows() {
+		return $("#omni-extension #omni-list .omni-item").filter(function() {
+			return this.style.display !== "none";
+		});
+	}
+	function showNumberHints() {
+		if (!isOpen) {
+			return;
+		}
+		visibleListRows().each(function(i) {
+			var chip = this.querySelector(".omni-num");
+			if (chip) {
+				chip.textContent = i < 9 ? (isMacPlatform ? "⌥" : "Alt+") + (i + 1) : "";
+			}
+		});
+		$("#omni-extension").addClass("omni-show-numbers");
+	}
+	function hideNumberHints() {
+		$("#omni-extension").removeClass("omni-show-numbers");
+	}
+
 	function setDefaultActiveItem() {
 		clearActiveState();
 		// Rows are only ever hidden via inline display, so this check needs
@@ -287,6 +311,7 @@ $(document).ready(() => {
 		renderRecentShortcuts();
 		if (navigator.platform.toUpperCase().indexOf("MAC") < 0) {
 			$("#omni-close-key").text("Ctrl⌫");
+			$("#omni-jump-key").text("Alt 1–9");
 		}
 		applyTheme(currentTheme);
 		applyScale(uiScale);
@@ -330,7 +355,7 @@ $(document).ready(() => {
 		var actionTitle = isRecentLike() ? highlightRecentMatch(action.title, recentQuery) : escapeHtml(action.title);
 		var actionDesc = escapeHtml(action.desc);
 		var closeBtn = action.type == "tab" && action.action == "switch-tab" ? "<button class='omni-close-tab' title='Close tab'>✕</button>" : "";
-		return "<div class='omni-item' "+skip+" data-index='"+index+"' data-type='"+action.type+"' data-current-tab='"+(action.currentTab ? "true" : "false")+"'>"+img+"<div class='omni-item-details'><div class='omni-item-name'>"+actionTitle+"</div><div class='omni-item-desc'>"+actionDesc+"</div></div>"+keys+"<div class='omni-select'>Select <span class='omni-shortcut'>⏎</span></div>"+closeBtn+"</div>";
+		return "<div class='omni-item' "+skip+" data-index='"+index+"' data-type='"+action.type+"' data-current-tab='"+(action.currentTab ? "true" : "false")+"'>"+img+"<div class='omni-item-details'><div class='omni-item-name'>"+actionTitle+"</div><div class='omni-item-desc'>"+actionDesc+"</div></div>"+keys+"<div class='omni-select'>Select <span class='omni-shortcut'>⏎</span></div>"+closeBtn+"<span class='omni-num'></span></div>";
 	}
 
 	// Add actions to the omni — built as strings and written in single DOM
@@ -351,6 +376,7 @@ $(document).ready(() => {
 		return html;
 	}
 	function populateOmni() {
+		hideNumberHints();
 		renderToken++;
 		var token = renderToken;
 		var firstChunkEnd = Math.min(actions.length, 250);
@@ -1123,6 +1149,24 @@ $(document).ready(() => {
 		// The page must not react to keys while the omni is open
 		e.stopPropagation();
 
+		// Holding Alt reveals the quick-jump numbers; Alt+digit goes there
+		if (e.key == "Alt" && !e.repeat) {
+			showNumberHints();
+		}
+		if (e.altKey && !e.shiftKey && !e.metaKey && !e.ctrlKey && e.code && e.code.indexOf("Digit") === 0) {
+			var digit = parseInt(e.code.slice(5), 10);
+			if (digit >= 1 && digit <= 9) {
+				e.preventDefault();
+				var jumpTarget = visibleListRows().eq(digit - 1);
+				if (jumpTarget.length) {
+					activateElement(jumpTarget);
+					hideNumberHints();
+					handleAction(e);
+				}
+				return;
+			}
+		}
+
 		// Cmd/Ctrl+Backspace closes the selected tab, palette stays open
 		if ((e.metaKey || e.ctrlKey) && (e.key == "Backspace" || e.keyCode == 8)) {
 			e.preventDefault();
@@ -1188,6 +1232,9 @@ $(document).ready(() => {
 		}
 	}, true);
 	window.addEventListener("keyup", (e) => {
+		if (e.key == "Alt") {
+			hideNumberHints();
+		}
 		if (isOpen) {
 			e.stopPropagation();
 		}
