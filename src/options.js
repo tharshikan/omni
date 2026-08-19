@@ -105,7 +105,7 @@ wireWidthSlider("drawer-width", "drawer-width-value", "leapDrawerWidth", 360);
 const RAIL_KEY = "leapShowRail";
 const railToggle = document.getElementById("show-rail");
 storage.get(RAIL_KEY).then((data) => {
-	railToggle.checked = !(data && data[RAIL_KEY] === false);
+	railToggle.checked = !!(data && data[RAIL_KEY] === true);
 });
 railToggle.addEventListener("change", () => {
 	storage.set({ [RAIL_KEY]: railToggle.checked });

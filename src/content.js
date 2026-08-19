@@ -41,7 +41,7 @@ $(document).ready(() => {
 		var data = stored || {};
 		paletteExplorerFlow = !!data.leapPaletteExplorerFlow;
 		liveSuggestions = data.leapLiveSuggestions !== false;
-		railEnabled = data.leapShowRail !== false;
+		railEnabled = data.leapShowRail === true;
 		paletteWidth = parseInt(data.leapPaletteWidth, 10) || 0;
 		drawerWidth = parseInt(data.leapDrawerWidth, 10) || 0;
 		applyScale(data.leapUiScale);
@@ -79,8 +79,8 @@ $(document).ready(() => {
 			root.style.setProperty("--leap-zoom", uiScale);
 		}
 	}
-	// Quick-launch rail visibility (palette + recents), user-configurable
-	var railEnabled = true;
+	// Quick-launch rail visibility (palette + recents), off unless enabled
+	var railEnabled = false;
 	// User-chosen widths for the palette and the drawer
 	var paletteWidth = 0;
 	var drawerWidth = 0;
@@ -144,7 +144,7 @@ $(document).ready(() => {
 				applyCloseBinding(changes.leapCloseTabShortcut.newValue);
 			}
 			if (changes.leapShowRail) {
-				railEnabled = changes.leapShowRail.newValue !== false;
+				railEnabled = changes.leapShowRail.newValue === true;
 				updateRecentFilterVisibility();
 			}
 			if (changes.leapPaletteWidth || changes.leapDrawerWidth) {
@@ -1339,7 +1339,7 @@ $(document).ready(() => {
 			// Left/right switch columns in recent mode; elsewhere the caret keeps them
 			if (currentMode == "recent") {
 				e.preventDefault();
-				moveAcrossColumns(e.key == "ArrowLeft" || e.keyCode == 37);
+				moveAcrossColumns(e.key == "ArrowRight" || e.keyCode == 39);
 			}
 		} else if (e.key == "Tab" || e.keyCode == 9) {
 			// Tab: keep focus where it is

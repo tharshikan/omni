@@ -235,10 +235,14 @@
    edge, shown in the palette and recents whenever the setting is on */
 .omni-extension.omni-rail-on #omni-recent-layout {
 	display: grid;
-	grid-template-columns: 46px minmax(0, 1fr);
+	grid-template-columns: minmax(0, 1fr) 46px;
 	column-gap: 0px;
 	align-items: stretch;
 	padding: 0px;
+}
+.omni-extension.omni-rail-on #omni-list {
+	grid-column: 1;
+	grid-row: 1;
 }
 .omni-extension #omni-shortcuts {
 	display: none;
@@ -248,8 +252,10 @@
 	flex-direction: column;
 	align-items: center;
 	gap: 4px;
+	grid-column: 2;
+	grid-row: 1;
 	padding: 10px 0px;
-	border-right: 1px solid var(--hairline);
+	border-left: 1px solid var(--hairline);
 	background: color-mix(in srgb, var(--key-bg) 55%, transparent);
 }
 .omni-extension .omni-shortcut-item {
