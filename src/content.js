@@ -23,6 +23,34 @@ $(document).ready(() => {
 		{title:"History", request:"history", icon:"assets/icon-history.svg"}
 	];
 
+	// Every setting loads in a single read. Opening waits on it, so a
+	// palette can never render with defaults and correct itself after —
+	// the new-tab path opens immediately after injection, and a tab that
+	// Chrome reloaded on activation opens while the read is still in
+	// flight, which is how the rail reappeared with the setting off.
+	var settingsReady = chrome.storage.local.get([
+		"leapPaletteExplorerFlow",
+		"leapLiveSuggestions",
+		"leapUiScale",
+		"leapShowRail",
+		"leapPaletteWidth",
+		"leapDrawerWidth",
+		"leapTheme",
+		"leapCloseTabShortcut"
+	]).then((stored) => {
+		var data = stored || {};
+		paletteExplorerFlow = !!data.leapPaletteExplorerFlow;
+		liveSuggestions = data.leapLiveSuggestions !== false;
+		railEnabled = data.leapShowRail !== false;
+		paletteWidth = parseInt(data.leapPaletteWidth, 10) || 0;
+		drawerWidth = parseInt(data.leapDrawerWidth, 10) || 0;
+		applyScale(data.leapUiScale);
+		applyWidths();
+		applyTheme(data.leapTheme || "bright");
+		applyCloseBinding(data.leapCloseTabShortcut);
+		updateRecentFilterVisibility();
+	}).catch(() => {});
+
 	// The explorer drawer behaves like recents, just rendered as a side panel
 	function isRecentLike() {
 		return currentMode == "recent" || currentMode == "explorer";
@@ -34,16 +62,8 @@ $(document).ready(() => {
 	function isExplorerFlow() {
 		return currentMode == "explorer" || (currentMode == "recent" && paletteExplorerFlow);
 	}
-	chrome.storage.local.get("leapPaletteExplorerFlow").then((data) => {
-		paletteExplorerFlow = !!(data && data.leapPaletteExplorerFlow);
-	});
-
 	// Live suggestions (Google suggest + history) — on unless switched off
 	var liveSuggestions = true;
-	chrome.storage.local.get("leapLiveSuggestions").then((data) => {
-		liveSuggestions = !(data && data.leapLiveSuggestions === false);
-	});
-
 	// User-chosen interface scale, applied as zoom so everything scales together
 	var uiScale = 1;
 	function applyScale(scale) {
@@ -59,17 +79,8 @@ $(document).ready(() => {
 			root.style.setProperty("--leap-zoom", uiScale);
 		}
 	}
-	chrome.storage.local.get("leapUiScale").then((data) => {
-		applyScale(data && data.leapUiScale);
-	});
-
 	// Quick-launch rail visibility (palette + recents), user-configurable
 	var railEnabled = true;
-	chrome.storage.local.get("leapShowRail").then((data) => {
-		railEnabled = !(data && data.leapShowRail === false);
-		updateRecentFilterVisibility();
-	});
-
 	// User-chosen widths for the palette and the drawer
 	var paletteWidth = 0;
 	var drawerWidth = 0;
@@ -89,12 +100,6 @@ $(document).ready(() => {
 			root.style.removeProperty("--leap-drawer-width");
 		}
 	}
-	chrome.storage.local.get(["leapPaletteWidth", "leapDrawerWidth"]).then((data) => {
-		paletteWidth = parseInt(data && data.leapPaletteWidth, 10) || 0;
-		drawerWidth = parseInt(data && data.leapDrawerWidth, 10) || 0;
-		applyWidths();
-	});
-
 	// Apply the chosen theme by writing its variables onto the UI roots;
 	// "auto" clears them so the system palette in the stylesheet wins
 	var currentTheme = "bright";
@@ -121,9 +126,6 @@ $(document).ready(() => {
 			});
 		});
 	}
-	chrome.storage.local.get("leapTheme").then((data) => {
-		applyTheme((data && data.leapTheme) || "bright");
-	});
 	if (chrome.storage.onChanged) {
 		chrome.storage.onChanged.addListener((changes, area) => {
 			if (area != "local") {
@@ -250,9 +252,6 @@ $(document).ready(() => {
 		closeTabBinding = (binding && binding.code) ? binding : defaultCloseBinding;
 		$("#omni-close-key").text(closeTabBinding.label);
 	}
-	chrome.storage.local.get("leapCloseTabShortcut").then((data) => {
-		applyCloseBinding(data && data.leapCloseTabShortcut);
-	});
 	function matchesCloseShortcut(e) {
 		var b = closeTabBinding;
 		return e.code === b.code &&
@@ -562,6 +561,10 @@ $(document).ready(() => {
 
 	// Open the omni
 	function openOmni(mode) {
+		settingsReady.then(() => openOmniNow(mode));
+	}
+
+	function openOmniNow(mode) {
 		currentMode = mode || "default";
 		updateInputPlaceholder();
 		const request = isExplorerFlow() ? "get-explorer-tabs" : isRecentLike() ? "get-recents" : "get-actions";
